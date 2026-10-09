@@ -1,5 +1,5 @@
 /*
- * PS5 Homescreen App Installer for the WebKit Autoloader Installer.
+ * PS5 Homescreen App Installer for the WK Autoloader Installer.
  * Based on the original implementation in ftpsrv by John Törnblom
  * and Payload Manager by X-F1REBALL-X.
  */

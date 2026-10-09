@@ -3,11 +3,12 @@
 
 # Tools
 PYTHON := python3
-CC     := /opt/ps5-payload-sdk/bin/prospero-clang
-STRIP  := /opt/ps5-payload-sdk/bin/prospero-strip
+# Override with: make SDK=/path/to/ps5-payload-sdk
+SDK    ?= /opt/ps5-payload-sdk
+CC     := $(SDK)/bin/prospero-clang
+STRIP  := $(SDK)/bin/prospero-strip
 
 # Paths
-SDK      := /opt/ps5-payload-sdk
 TARGET   := $(SDK)/target
 INCLUDES := -Iinclude -I$(TARGET)/include
 LIBS     := $(TARGET)/lib/libmicrohttpd.a \
@@ -143,10 +144,13 @@ COMPANIONS_SRCS := src/companions_main.c src/app_installer.c src/notification.c 
 .PHONY: companions
 companions: $(COMPANIONS_ELF)
 
-$(COMPANIONS_ELF): $(COMPANIONS_SRCS) include/app_installer.h $(ICON0) assets/companions/elf-launcher/param.json assets/companions/elf-launcher/icon0.png assets/companions/payload-manager/param.json assets/companions/payload-manager/icon0.png
+# Companions only need install/notify libs — not libmicrohttpd (installer HTTP).
+COMPANIONS_LIBS := -L$(TARGET)/lib -lpthread 	-lSceNetCtl -lSceUserService -lSceSystemService -lSceAppInstUtil
+
+$(COMPANIONS_ELF): $(COMPANIONS_SRCS) include/app_installer.h $(ICON0) assets/companions/elf-launcher/param.json assets/companions/elf-launcher/icon0.png
 	@echo "Building $(COMPANIONS_ELF)..."
 	@mkdir -p $(dir $(COMPANIONS_ELF))
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(COMPANIONS_ELF) $(COMPANIONS_SRCS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(COMPANIONS_ELF) $(COMPANIONS_SRCS) $(COMPANIONS_LIBS)
 	$(STRIP) $(COMPANIONS_ELF)
 	@sha256sum $(COMPANIONS_ELF) | awk '{print "wkal-companions " $$1}' > $(COMPANIONS_ELF).sha256
 	@echo "Built $(COMPANIONS_ELF) ($$(wc -c < $(COMPANIONS_ELF)) bytes)"

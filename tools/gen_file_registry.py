@@ -253,6 +253,12 @@ def collect_cachebust_urls(files):
 
 def manifest_omits_unused_tree(path):
     """umtx2 full tree omitted. Slopkit: keep Poops + its JS/offsets deps only."""
+    # Payload Manager is no longer offered in the UI; caching its ~2.4MB ELF
+    # parked the installer bar around ~71% on PS5 WebKit (byte progress through
+    # payloads/pldmgr.elf after payload.elf).
+    base0 = path.split("?", 1)[0]
+    if base0.endswith("/payloads/pldmgr.elf") or base0.endswith("/payload-manager-icon.jpg"):
+        return True
     if "/umtx2/" in path:
         return True
     if "/slopkit/" in path:
@@ -459,17 +465,7 @@ def main():
         out.write("const unsigned int file_registry_count =\n")
         out.write("    sizeof(file_registry) / sizeof(file_registry[0]);\n")
         out.write("\n")
-        out.write("const FileEntry *file_registry_find(const char *path) {\n")
-        out.write("    if (!path)\n")
-        out.write("        return NULL;\n")
-        out.write("\n")
-        out.write("    for (unsigned int i = 0; i < file_registry_count; i++) {\n")
-        out.write('        if (strcmp(file_registry[i].path, path) == 0)\n')
-        out.write("            return &file_registry[i];\n")
-        out.write("    }\n")
-        out.write("\n")
-        out.write("    return NULL;\n")
-        out.write("}\n")
+        out.write("const FileEntry *file_registry_find(const char *path) {\n    const char *q;\n    size_t n;\n    unsigned int i;\n    if (!path)\n        return NULL;\n    q = strchr(path, '?');\n    n = q ? (size_t)(q - path) : strlen(path);\n\n    for (i = 0; i < file_registry_count; i++) {\n        if (strlen(file_registry[i].path) == n &&\n            strncmp(file_registry[i].path, path, n) == 0)\n            return &file_registry[i];\n    }\n\n    return NULL;\n}\n")
 
     print(f"Generated {header_out} and {source_out} ({len(files)} files, {manifest_path})")
 

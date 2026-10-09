@@ -37,9 +37,24 @@ static void add_cors_headers(struct MHD_Response *resp) {
 }
 
 static const FileEntry *registry_lookup(const char *url) {
+    char path[1024];
+    const char *q;
+    size_t n;
+
     if (strcmp(url, ROUTE_INDEX) == 0)
         return file_registry_find(ROUTE_INDEX_HTML);
-    return file_registry_find(url);
+
+    /* AppCache manifest lists cache-bust / iframe URLs with ?query. MHD may
+     * pass the query in `url`; the registry only stores the bare path. */
+    q = strchr(url, '?');
+    if (!q)
+        return file_registry_find(url);
+    n = (size_t)(q - url);
+    if (n >= sizeof(path))
+        n = sizeof(path) - 1;
+    memcpy(path, url, n);
+    path[n] = '\0';
+    return file_registry_find(path);
 }
 
 enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,

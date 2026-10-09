@@ -4,60 +4,71 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/favicon.png" />
-  <link rel="preload" href="/installer-hero.jpg" as="image" />
   <title>WK Autoloader v[[VERSION_PLACEHOLDER]]</title>
+  <script>(function(){var v="";try{v=localStorage.getItem("wkal-theme")||""}catch(e){}if(!/^(gray|white|gold|black)$/.test(v))v="";if(v){document.documentElement.setAttribute("data-theme",v);if(v==="gold"||v==="black")document.documentElement.className+=" dark"}}())</script>
   <style>
+    @font-face{font-family:"Assistant";font-weight:400;font-display:swap;src:url(/fonts/assistant-400.woff) format("woff")}
+    @font-face{font-family:"Assistant";font-weight:700;font-display:swap;src:url(/fonts/assistant-700.woff) format("woff")}
+    @font-face{font-family:"Assistant";font-weight:800;font-display:swap;src:url(/fonts/assistant-700.woff) format("woff")}
+    :root{--bg:#f7f4ee;--card:#fffdf8;--card2:#f4efe5;--edge:#e5ddcd;--edge2:#cfc2ab;--ink:#231c14;--ink2:#463b2d;--mute:#665a49;--pri:#4f46e5;--pri2:#7c3aed;--rose:#db2777;--mint:#047857;--onp:#fff;--glow:rgba(79,70,229,.10)}
+    html[data-theme=gray]{--bg:#eceef1;--card:#f8f9fb;--card2:#eef0f3;--edge:#d6dae1;--edge2:#b9c0cb;--ink:#15191f;--ink2:#343b47;--mute:#525b69}
+    html[data-theme=white]{--bg:#fff;--card:#fff;--card2:#f5f6f8;--edge:#e3e5e9;--edge2:#c9cdd4;--ink:#111318;--ink2:#2f3440;--mute:#555c69}
+    html[data-theme=gold]{--bg:#0b0a08;--card:#17150f;--card2:#221e16;--edge:#2f2a1e;--edge2:#4a4130;--ink:#f6efdc;--ink2:#e2d6b8;--mute:#b9ab88;--pri:#e3b341;--pri2:#d9a531;--onp:#17120a;--rose:#f472b6;--mint:#34d399;--glow:rgba(227,179,65,.08)}
+    html[data-theme=black]{--bg:#000;--card:#0d0d0e;--card2:#1a1a1d;--edge:#232326;--edge2:#3a3a3f;--ink:#f5f5f7;--ink2:#d4d4d8;--mute:#a1a1aa;--pri:#a5b4fc;--pri2:#c4b5fd;--onp:#0b0b1a;--rose:#f9a8d4;--mint:#6ee7b7;--glow:rgba(165,180,252,.06)}
     *{margin:0;padding:0;-webkit-box-sizing:border-box;box-sizing:border-box}
     html,body{height:100%}
-    body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:#000;color:#2a9fff;min-height:100%;overflow:hidden;text-align:center}
-    #bg{position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;pointer-events:none;background:#000 url("/installer-hero.jpg") center center/cover no-repeat}
-    #bg:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.38);pointer-events:none}
-    main{position:relative;z-index:2;height:100%;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;-webkit-box-align:center;-webkit-align-items:center;align-items:center;-webkit-box-pack:start;-webkit-justify-content:flex-start;justify-content:flex-start;gap:12px;padding:46vh 24px 88px;background:transparent;box-sizing:border-box}
-    #statusMsg{margin:0 0 8px;color:#fff;font-size:22px;font-weight:700;letter-spacing:.06em;text-shadow:0 0 12px rgba(255,255,255,.4)}
-    #progressContainer{width:min(420px,78vw);height:14px;margin-top:12px;border-radius:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);overflow:hidden;position:relative;-webkit-box-shadow:0 0 18px rgba(255,255,255,.12);box-shadow:0 0 18px rgba(255,255,255,.12)}
-    #progressBar{position:absolute;top:0;left:0;height:100%;width:100%;background:#fff;background:-webkit-linear-gradient(90deg,#e8e8e8 0%,#fff 50%,#f5f5f5 100%);background:linear-gradient(90deg,#e8e8e8 0%,#fff 50%,#f5f5f5 100%);-webkit-box-shadow:0 0 14px rgba(255,255,255,.45);box-shadow:0 0 14px rgba(255,255,255,.45);-webkit-transform:scaleX(0);transform:scaleX(0);-webkit-transform-origin:left center;transform-origin:left center;-webkit-transition:-webkit-transform .85s cubic-bezier(.22,1,.36,1),background .35s ease;transition:transform .85s cubic-bezier(.22,1,.36,1),background .35s ease}
-    #progressPct{margin-top:10px;color:#fff;font-size:28px;font-weight:800;letter-spacing:.06em;text-shadow:0 0 14px rgba(255,255,255,.45)}
-    #elapsedMsg{margin-top:6px;color:#e5e5e5;font-size:14px;font-weight:600;letter-spacing:.04em;text-shadow:0 0 8px rgba(255,255,255,.2)}
-    #successMsg{display:none;margin-top:10px;color:#22c55e;font-size:18px;font-weight:800;letter-spacing:.02em;text-shadow:0 0 16px rgba(34,197,94,.45);line-height:1.3}
-    #successMsg .check{display:inline-block;width:16px;height:9px;margin:0 10px 3px 0;border-left:3px solid #2a9fff;border-bottom:3px solid #2a9fff;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);vertical-align:middle;color:transparent;text-shadow:none;font-size:0}
+    body{font-family:"Assistant","Segoe UI",system-ui,sans-serif;color:var(--ink);background:radial-gradient(70vw 60vh at 85% -10%,var(--glow),transparent 60%),var(--bg);min-height:100%;overflow:hidden;text-align:center}
+    main{height:100%;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;-webkit-box-align:center;-webkit-align-items:center;align-items:center;-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center;padding:24px}
+    .card{width:min(520px,92vw);background:var(--card);border:1px solid var(--edge);border-radius:28px;padding:34px 34px 26px;box-shadow:0 1px 2px rgba(60,45,25,.05),0 10px 34px rgba(60,45,25,.08)}
+    html.dark .card{box-shadow:0 10px 34px rgba(0,0,0,.5)}
+    .logo{width:92px;height:92px;margin:0 auto 16px;border-radius:22px;overflow:hidden;box-shadow:0 10px 26px rgba(234,88,12,.28)}
+    .logo img{display:block;width:100%;height:100%;object-fit:cover}
+    h1{font-size:30px;font-weight:800;letter-spacing:.01em;line-height:1.05}
+    h1 b{background:linear-gradient(90deg,var(--pri),var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .ver{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;color:var(--ink2);background:var(--card2);border:1px solid var(--edge2)}
+    #statusMsg{margin:26px 0 0;color:var(--ink2);font-size:20px;font-weight:700}
+    #progressContainer{width:100%;height:12px;margin-top:14px;border-radius:999px;background:var(--card2);border:1px solid var(--edge);overflow:hidden;position:relative}
+    #progressBar{position:absolute;top:0;left:0;height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,var(--pri),var(--pri2));-webkit-transform:scaleX(0);transform:scaleX(0);-webkit-transform-origin:left center;transform-origin:left center;-webkit-transition:-webkit-transform .85s cubic-bezier(.22,1,.36,1),background .35s ease;transition:transform .85s cubic-bezier(.22,1,.36,1),background .35s ease}
+    #progressPct{margin-top:12px;font-size:30px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+    #elapsedMsg{margin-top:2px;color:var(--mute);font-size:14px;font-weight:700}
+    #successMsg{display:none;margin-top:14px;color:var(--mint);font-size:18px;font-weight:800;line-height:1.35}
+    #successMsg .check{display:inline-block;width:14px;height:8px;margin:0 9px 4px 0;border-left:3px solid var(--mint);border-bottom:3px solid var(--mint);-webkit-transform:rotate(-45deg);transform:rotate(-45deg);vertical-align:middle}
     body.done #statusMsg{display:none!important}
     body.done #successMsg{display:block}
-    body.done #progressPct{color:#86efac}
-    body.done #elapsedMsg{color:#86efac}
-    body.done #progressBar{-webkit-transform:scaleX(1)!important;transform:scaleX(1)!important;background:#22c55e;background:-webkit-linear-gradient(90deg,#15803d 0%,#16a34a 40%,#22c55e 70%,#86efac 100%);background:linear-gradient(90deg,#15803d 0%,#16a34a 40%,#22c55e 70%,#86efac 100%);-webkit-box-shadow:0 0 14px rgba(34,197,94,.55);box-shadow:0 0 14px rgba(34,197,94,.55)}
-    #footer{position:fixed;left:0;right:0;bottom:10px;text-align:center;font-size:12px;color:#fff;letter-spacing:.08em;pointer-events:none;line-height:1.5;text-shadow:0 0 12px rgba(255,255,255,.35);z-index:20}
-    #footer b{color:#fff;font-weight:600}
-#footer a{color:inherit;text-decoration:none;pointer-events:auto}
-
-    #langbox{position:relative;width:min(420px,78vw);margin-top:14px;z-index:40}
-    #langbtn{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;border:0;cursor:pointer;color:#fff;font:inherit;font-size:14px;font-weight:800;padding:10px 12px;border-radius:999px;background:-webkit-linear-gradient(#2c6aa0,#123a5e);background:linear-gradient(#2c6aa0,#123a5e);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 #06111c;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 #06111c}
-    .flag{display:inline-block;width:28px;height:19px;-webkit-flex:0 0 28px;flex:0 0 28px;border-radius:3px;overflow:hidden;-webkit-box-shadow:0 0 0 1px rgba(255,255,255,.35);box-shadow:0 0 0 1px rgba(255,255,255,.35)}
+    body.done #progressPct{color:var(--mint)}
+    body.done #progressBar{-webkit-transform:scaleX(1)!important;transform:scaleX(1)!important;background:linear-gradient(90deg,#15803d,#16a34a,#22c55e)}
+    #langbox{position:relative;margin:20px auto 0;width:max-content;z-index:40}
+    #langbtn{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;gap:8px;min-height:40px;padding:6px 16px;border-radius:999px;border:1px solid var(--edge2);background:var(--card);font:inherit;font-size:15px;font-weight:700;color:var(--ink2);cursor:pointer}
+    .flag{display:inline-block;width:22px;height:15px;-webkit-flex:0 0 22px;flex:0 0 22px;border-radius:3px;overflow:hidden}
     .flag svg{display:block;width:100%;height:100%}
-    #langlist{display:none;position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:60;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px;border-radius:16px;background:-webkit-linear-gradient(#123a5e,#071624);background:linear-gradient(#123a5e,#071624);border:2px solid #7ec8ff;-webkit-box-shadow:0 12px 30px rgba(0,0,0,.6);box-shadow:0 12px 30px rgba(0,0,0,.6);box-sizing:border-box}
+    #langlist{display:none;position:absolute;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);bottom:calc(100% + 8px);z-index:60;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px;border-radius:14px;background:var(--card);border:1px solid var(--edge2);box-shadow:0 12px 30px rgba(60,45,25,.18);min-width:17rem}
     #langlist.show{display:-ms-grid;display:grid}
-    .langopt{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;gap:10px;width:100%;box-sizing:border-box;border:0;cursor:pointer;color:#eaf6ff;font:inherit;font-size:14px;font-weight:800;padding:7px 10px;border-radius:10px;text-align:left;background:-webkit-linear-gradient(#1a4d7a,#0c2c4a);background:linear-gradient(#1a4d7a,#0c2c4a)}
-    .langopt[data-state="on"]{background:-webkit-linear-gradient(#7ec8ff,#1c82e4 55%,#0a4d94);background:linear-gradient(#7ec8ff,#1c82e4 55%,#0a4d94);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 2px #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 2px #fff}
-    main[dir="rtl"] #statusMsg,main[dir="rtl"] #elapsedMsg,main[dir="rtl"] #successMsg{text-align:right}
+    .langopt{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;gap:8px;border:0;cursor:pointer;color:var(--ink);font:inherit;font-size:14px;font-weight:700;padding:7px 9px;border-radius:10px;background:var(--card2);text-align:left}
+    .langopt[data-state="on"]{background:var(--pri);color:var(--onp)}
+    main[dir="rtl"] .langopt{text-align:right}
   </style>
 </head>
 <body>
-  <div id="bg" aria-hidden="true"></div>
   <main>
-    <p id="statusMsg" data-i18n="installing">Installing…</p>
-    <div id="progressContainer"><div id="progressBar"></div></div>
-    <div id="progressPct">0%</div>
-    <p id="elapsedMsg">Elapsed 0:00</p>
-    <div id="langbox"><button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button><div id="langlist" role="menu" data-state="closed"></div></div>
-    <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="installSuccess" data-i18n-html="1">Updated successfully<br>Opening WK Autoloader…</span></div>
+    <section class="card">
+      <div class="logo"><img src="/logo.png" alt="" width="92" height="92" /></div>
+      <h1>WK <b>Autoloader</b></h1>
+      <span class="ver">v[[VERSION_PLACEHOLDER]]</span>
+      <p id="statusMsg" data-i18n="installing">Installing…</p>
+      <div id="progressContainer"><div id="progressBar"></div></div>
+      <div id="progressPct">0%</div>
+      <p id="elapsedMsg">Elapsed 0:00</p>
+      <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="installSuccess" data-i18n-html="1">Updated successfully<br>Opening WK Autoloader…</span></div>
+      <div id="langbox"><button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button><div id="langlist" role="menu" data-state="closed"></div></div>
+    </section>
   </main>
-  <footer id="footer"><b>Developed by <a href="https://github.com/X-F1REBALL-X" target="_blank" rel="noopener">X-F1REBALL-X</a></b></footer>
-  
+
   <script>
   (function(global){
     'use strict';
     var LANGS=[{"code": "en", "name": "English", "flag": "us"}, {"code": "ar", "name": "العربية", "flag": "sa", "rtl": true}, {"code": "es", "name": "Español", "flag": "es"}, {"code": "fr", "name": "Français", "flag": "fr"}, {"code": "de", "name": "Deutsch", "flag": "de"}, {"code": "pt", "name": "Português", "flag": "br"}, {"code": "ru", "name": "Русский", "flag": "ru"}, {"code": "ja", "name": "日本語", "flag": "jp"}, {"code": "zh", "name": "中文", "flag": "cn"}, {"code": "it", "name": "Italiano", "flag": "it"}, {"code": "he", "name": "עברית", "flag": "il", "rtl": true}];
     var FLAGS={"us": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><g fill=\"#b22234\"><rect width=\"30\" height=\"1.54\"/><rect y=\"3.08\" width=\"30\" height=\"1.54\"/><rect y=\"6.15\" width=\"30\" height=\"1.54\"/><rect y=\"9.23\" width=\"30\" height=\"1.54\"/><rect y=\"12.3\" width=\"30\" height=\"1.54\"/><rect y=\"15.4\" width=\"30\" height=\"1.54\"/><rect y=\"18.46\" width=\"30\" height=\"1.54\"/></g><rect width=\"13\" height=\"10.77\" fill=\"#3c3b6e\"/><g fill=\"#fff\"><circle cx=\"2.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"6.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"10.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"4.5\" cy=\"5.4\" r=\".7\"/><circle cx=\"8.5\" cy=\"5.4\" r=\".7\"/><circle cx=\"2.5\" cy=\"8.6\" r=\".7\"/><circle cx=\"6.5\" cy=\"8.6\" r=\".7\"/><circle cx=\"10.5\" cy=\"8.6\" r=\".7\"/></g></svg>", "sa": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#006c35\"/><path d=\"M8 8.5h14M9 10c2 .8 4 .8 6 0s4-.8 6 0\" stroke=\"#fff\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M8 14h13l1.5-1\" stroke=\"#fff\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "es": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#aa151b\"/><rect y=\"5\" width=\"30\" height=\"10\" fill=\"#f1bf00\"/></svg>", "fr": "<svg viewBox=\"0 0 30 20\"><rect width=\"10\" height=\"20\" fill=\"#0055a4\"/><rect x=\"10\" width=\"10\" height=\"20\" fill=\"#fff\"/><rect x=\"20\" width=\"10\" height=\"20\" fill=\"#ef4135\"/></svg>", "de": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"6.67\" fill=\"#000\"/><rect y=\"6.67\" width=\"30\" height=\"6.67\" fill=\"#dd0000\"/><rect y=\"13.33\" width=\"30\" height=\"6.67\" fill=\"#ffce00\"/></svg>", "br": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#009c3b\"/><path d=\"M15 2.5L27 10 15 17.5 3 10z\" fill=\"#ffdf00\"/><circle cx=\"15\" cy=\"10\" r=\"4.2\" fill=\"#002776\"/><path d=\"M11 9.3c2.7-.6 5.6-.3 8 .9\" stroke=\"#fff\" stroke-width=\".7\" fill=\"none\"/></svg>", "ru": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"6.67\" fill=\"#fff\"/><rect y=\"6.67\" width=\"30\" height=\"6.67\" fill=\"#0039a6\"/><rect y=\"13.33\" width=\"30\" height=\"6.67\" fill=\"#d52b1e\"/></svg>", "jp": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><circle cx=\"15\" cy=\"10\" r=\"6\" fill=\"#bc002d\"/></svg>", "cn": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#de2910\"/><path d=\"M5 2.5l1.18 3.6H10l-3.1 2.2 1.2 3.6L5 9.7l-3.1 2.2 1.2-3.6L0 6.1h3.8z\" fill=\"#ffde00\"/><g fill=\"#ffde00\"><circle cx=\"11\" cy=\"2.5\" r=\".9\"/><circle cx=\"13\" cy=\"4.6\" r=\".9\"/><circle cx=\"13\" cy=\"7.6\" r=\".9\"/><circle cx=\"11\" cy=\"9.6\" r=\".9\"/></g></svg>", "it": "<svg viewBox=\"0 0 30 20\"><rect width=\"10\" height=\"20\" fill=\"#009246\"/><rect x=\"10\" width=\"10\" height=\"20\" fill=\"#fff\"/><rect x=\"20\" width=\"10\" height=\"20\" fill=\"#ce2b37\"/></svg>", "il": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><rect y=\"2.2\" width=\"30\" height=\"2.4\" fill=\"#0038b8\"/><rect y=\"15.4\" width=\"30\" height=\"2.4\" fill=\"#0038b8\"/><path d=\"M15 6.2l1.35 4.15h4.35l-3.52 2.56 1.35 4.15L15 14.5l-3.53 2.56 1.35-4.15-3.52-2.56h4.35z\" fill=\"none\" stroke=\"#0038b8\" stroke-width=\"1\"/></svg>"};
-    var I18N={"en": {"language": "Language", "langSet": "Language: English", "credit": "Developed by X-F1REBALL-X", "installing": "Installing…", "installSuccess": "Updated successfully\nOpening WK Autoloader…", "elapsed": "Elapsed {t}", "cancel": "Cancel"}, "ar": {"language": "اللغة", "langSet": "اللغة: العربية", "credit": "Developed by X-F1REBALL-X", "installing": "جارٍ التثبيت…", "installSuccess": "تم التحديث بنجاح\nجارٍ فتح WK Autoloader…", "elapsed": "الوقت المنقضي {t}", "cancel": "إلغاء"}, "es": {"language": "Idioma", "langSet": "Idioma: Español", "credit": "Developed by X-F1REBALL-X", "installing": "Instalando…", "installSuccess": "Actualizado correctamente\nAbriendo WK Autoloader…", "elapsed": "Transcurrido {t}", "cancel": "Cancelar"}, "fr": {"language": "Langue", "langSet": "Langue : Français", "credit": "Developed by X-F1REBALL-X", "installing": "Installation…", "installSuccess": "Mise à jour réussie\nOuverture de WK Autoloader…", "elapsed": "Écoulé {t}", "cancel": "Annuler"}, "de": {"language": "Sprache", "langSet": "Sprache: Deutsch", "credit": "Developed by X-F1REBALL-X", "installing": "Installation…", "installSuccess": "Erfolgreich aktualisiert\nWK Autoloader wird geöffnet…", "elapsed": "Vergangen {t}", "cancel": "Abbrechen"}, "pt": {"language": "Idioma", "langSet": "Idioma: Português", "credit": "Developed by X-F1REBALL-X", "installing": "Instalando…", "installSuccess": "Atualizado com sucesso\nAbrindo WK Autoloader…", "elapsed": "Decorrido {t}", "cancel": "Cancelar"}, "ru": {"language": "Язык", "langSet": "Язык: Русский", "credit": "Developed by X-F1REBALL-X", "installing": "Установка…", "installSuccess": "Успешно обновлено\nОткрытие WK Autoloader…", "elapsed": "Прошло {t}", "cancel": "Отмена"}, "ja": {"language": "言語", "langSet": "言語: 日本語", "credit": "Developed by X-F1REBALL-X", "installing": "インストール中…", "installSuccess": "更新に成功しました\nWK Autoloader を開いています…", "elapsed": "経過 {t}", "cancel": "キャンセル"}, "zh": {"language": "语言", "langSet": "语言：中文", "credit": "Developed by X-F1REBALL-X", "installing": "正在安装…", "installSuccess": "更新成功\n正在打开 WK Autoloader…", "elapsed": "已用时 {t}", "cancel": "取消"}, "it": {"language": "Lingua", "langSet": "Lingua: Italiano", "credit": "Developed by X-F1REBALL-X", "installing": "Installazione…", "installSuccess": "Aggiornato correttamente\nApertura di WK Autoloader…", "elapsed": "Trascorso {t}", "cancel": "Annulla"}, "he": {"language": "שפה", "langSet": "שפה: עברית", "credit": "Developed by X-F1REBALL-X", "installing": "מתקין…", "installSuccess": "עודכן בהצלחה\nפותח את WK Autoloader…", "elapsed": "חלף {t}", "cancel": "ביטול"}};
+    var I18N={"en": {"language": "Language", "langSet": "Language: English", "installing": "Installing…", "installSuccess": "Updated successfully\nOpening WK Autoloader…", "elapsed": "Elapsed {t}", "cancel": "Cancel"}, "ar": {"language": "اللغة", "langSet": "اللغة: العربية", "installing": "جارٍ التثبيت…", "installSuccess": "تم التحديث بنجاح\nجارٍ فتح WK Autoloader…", "elapsed": "الوقت المنقضي {t}", "cancel": "إلغاء"}, "es": {"language": "Idioma", "langSet": "Idioma: Español", "installing": "Instalando…", "installSuccess": "Actualizado correctamente\nAbriendo WK Autoloader…", "elapsed": "Transcurrido {t}", "cancel": "Cancelar"}, "fr": {"language": "Langue", "langSet": "Langue : Français", "installing": "Installation…", "installSuccess": "Mise à jour réussie\nOuverture de WK Autoloader…", "elapsed": "Écoulé {t}", "cancel": "Annuler"}, "de": {"language": "Sprache", "langSet": "Sprache: Deutsch", "installing": "Installation…", "installSuccess": "Erfolgreich aktualisiert\nWK Autoloader wird geöffnet…", "elapsed": "Vergangen {t}", "cancel": "Abbrechen"}, "pt": {"language": "Idioma", "langSet": "Idioma: Português", "installing": "Instalando…", "installSuccess": "Atualizado com sucesso\nAbrindo WK Autoloader…", "elapsed": "Decorrido {t}", "cancel": "Cancelar"}, "ru": {"language": "Язык", "langSet": "Язык: Русский", "installing": "Установка…", "installSuccess": "Успешно обновлено\nОткрытие WK Autoloader…", "elapsed": "Прошло {t}", "cancel": "Отмена"}, "ja": {"language": "言語", "langSet": "言語: 日本語", "installing": "インストール中…", "installSuccess": "更新に成功しました\nWK Autoloader を開いています…", "elapsed": "経過 {t}", "cancel": "キャンセル"}, "zh": {"language": "语言", "langSet": "语言：中文", "installing": "正在安装…", "installSuccess": "更新成功\n正在打开 WK Autoloader…", "elapsed": "已用时 {t}", "cancel": "取消"}, "it": {"language": "Lingua", "langSet": "Lingua: Italiano", "installing": "Installazione…", "installSuccess": "Aggiornato correttamente\nApertura di WK Autoloader…", "elapsed": "Trascorso {t}", "cancel": "Annulla"}, "he": {"language": "שפה", "langSet": "שפה: עברית", "installing": "מתקין…", "installSuccess": "עודכן בהצלחה\nפותח את WK Autoloader…", "elapsed": "חלף {t}", "cancel": "ביטול"}};
     var LANG='en';
     var LS_LANG_KEY='ps5elfs-lang';
     function langInfo(code){ var i; for(i=0;i<LANGS.length;i++){ if(LANGS[i].code===code) return LANGS[i]; } return LANGS[0]; }
@@ -72,7 +83,6 @@
       var v='', m;
       try{ v=localStorage.getItem(LS_LANG_KEY)||''; }catch(e){}
       if(!v){ try{ m=document.cookie.match(/(?:^|; )ps5elfs-lang=([a-z]{2})/); if(m) v=m[1]; }catch(e2){} }
-      if(v==='he') v='en';
       return I18N[v]?v:'en';
     }
     function saveLang(code){

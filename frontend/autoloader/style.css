@@ -98,7 +98,7 @@ html.dark .go{color:var(--onp)}
 .ring{width:8.5rem;height:8.5rem;margin:0 auto 1rem;border-radius:50%;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:conic-gradient(var(--pri) 0deg, var(--card2) 0);box-shadow:inset 0 0 0 10px var(--card)}
 .ring #progressPct{margin:0;font-size:1.6rem;font-weight:800;background:var(--card);width:6.2rem;height:6.2rem;border-radius:50%;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #progressContainer{height:14px;border-radius:999px;background:var(--card2);border:1px solid var(--edge2);overflow:hidden;position:relative;margin-top:.5rem}
-#progressBar{position:absolute;top:0;left:0;height:100%;width:100%;background:linear-gradient(90deg,var(--pri),var(--pri2),var(--rose));-webkit-transform:scaleX(0);transform:scaleX(0);-webkit-transform-origin:left center;transform-origin:left center;-webkit-transition:-webkit-transform .35s ease;transition:transform .35s ease}
+#progressBar{position:absolute;top:0;left:0;height:100%;width:100%;background:linear-gradient(90deg,var(--pri),var(--pri2));-webkit-transform:scaleX(0);transform:scaleX(0);-webkit-transform-origin:left center;transform-origin:left center;-webkit-transition:-webkit-transform .18s linear,background .35s ease;transition:transform .18s linear,background .35s ease}
 #elapsedMsg{margin:0 0 1rem;color:var(--mute);font-weight:700}
 #successMsg,#failMsg{display:none;margin-top:.4rem;font-size:1.15rem;font-weight:800}
 #successMsg{color:var(--mint)}#failMsg{color:var(--bad)}

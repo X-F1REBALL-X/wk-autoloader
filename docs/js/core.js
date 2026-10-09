@@ -21,6 +21,7 @@ W.state = {
   repairCount: 0,
   mirrorTimer: 0,
   progressPct: 0,
+  progressDisplay: 0,
   progressDone: false,
   progressTimer: 0,
   elapsedTimer: 0,
@@ -141,16 +142,13 @@ W.touchProgress = function () {
   if (W.ui && W.ui.hideStall) W.ui.hideStall();
 };
 
-W.updateProgress = function (percent, message) {
-  percent = Math.max(0, Math.min(100, percent | 0));
-  if (!W.state.progressDone && percent < W.state.progressPct && percent !== 0) {
-  } else {
-    W.state.progressPct = percent;
-  }
-  W.touchProgress();
+W.applyProgressVisual = function (display, message) {
+  if (display < 0) display = 0;
+  if (display > 100) display = 100;
+  W.state.progressDisplay = display;
   var bar = W.els.progressBar;
   if (bar) {
-    var scale = 'scaleX(' + (W.state.progressPct / 100) + ')';
+    var scale = 'scaleX(' + (display / 100) + ')';
     if (bar.__scale !== scale) {
       bar.__scale = scale;
       bar.style.webkitTransform = scale;
@@ -159,19 +157,42 @@ W.updateProgress = function (percent, message) {
   }
   var pctEl = W.els.progressPct;
   if (pctEl) {
-    var pctText = W.state.progressPct + '%';
+    var pctText = Math.floor(display + 1e-6) + '%';
     if (pctEl.textContent !== pctText) pctEl.textContent = pctText;
   }
   var ring = W.els.progressRing;
   if (ring) {
-    var deg = Math.round(W.state.progressPct * 3.6);
-    ring.style.background = 'conic-gradient(var(--pri) ' + deg + 'deg, var(--card2) 0)';
+    var deg = Math.round(display * 3.6);
+    var bg = 'conic-gradient(var(--pri) ' + deg + 'deg, var(--card2) 0)';
+    if (ring.__bg !== bg) {
+      ring.__bg = bg;
+      ring.style.background = bg;
+    }
   }
   if (message) {
     if (W.els.progressLabel) W.els.progressLabel.textContent = message;
     W.uiLog(message, 'info');
   }
-  if (W.state.progressPct >= 100) {
+};
+
+W.updateProgress = function (percent, message) {
+  percent = Math.max(0, Math.min(100, +percent));
+  if (!W.state.progressDone && percent < W.state.progressPct && percent !== 0) {
+  } else {
+    W.state.progressPct = percent;
+  }
+  W.touchProgress();
+  if (W.state.progressDisplay > W.state.progressPct) {
+    W.state.progressDisplay = W.state.progressPct;
+  }
+  W.applyProgressVisual(
+    W.state.progressDisplay < W.state.progressPct
+      ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
+      : W.state.progressPct,
+    message
+  );
+  if (W.state.progressPct >= 100 && W.state.progressDisplay >= 99.2) {
+    W.applyProgressVisual(100, message);
     W.state.progressDone = true;
     try { document.body.className = 'done'; } catch (e) {}
     if (W.els.statusMsg) W.els.statusMsg.style.display = 'none';
@@ -191,12 +212,20 @@ W.startProgressDriver = function () {
       W.state.progressTimer = 0;
       return;
     }
-    if (W.state.progressPct >= 94) return;
-    var next = W.state.progressPct + Math.max(0.55, (94 - W.state.progressPct) * 0.055);
-    if (next > 94) next = 94;
-    var floored = Math.floor(next * 10) / 10;
-    if (floored !== W.state.progressPct) W.updateProgress(Math.floor(floored));
-  }, 250);
+    /* Creep the target, then ease the visible bar/ring toward it so it never sits still. */
+    if (W.state.progressPct < 94) {
+      var next = W.state.progressPct + Math.max(0.4, (94 - W.state.progressPct) * 0.045);
+      if (next > 94) next = 94;
+      W.state.progressPct = next;
+      W.touchProgress();
+    }
+    var disp = W.state.progressDisplay || 0;
+    var tgt = W.state.progressPct;
+    if (disp < tgt) disp += (tgt - disp) * 0.2;
+    else disp = tgt;
+    if (tgt - disp < 0.08) disp = tgt;
+    W.applyProgressVisual(disp, null);
+  }, 50);
 };
 
 W.stopElapsed = function () {

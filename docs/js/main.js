@@ -166,17 +166,11 @@ window.addEventListener('load', function () {
   W.ui.bindHome();
   if (W.selfupd && W.selfupd.bind) W.selfupd.bind();
 
-  /* Keep top-bar + footer version in sync with the same string self-update reads. */
+  /* Keep top-bar version in sync with the same string self-update reads. */
   try {
     var ver = (W.selfupd && W.selfupd.currentAppVersion) ? W.selfupd.currentAppVersion() : '';
     var appVer = document.getElementById('appVer');
-    var foot = document.getElementById('footVer');
-    if (ver) {
-      if (appVer && (appVer.textContent||'').indexOf('[[') >= 0) appVer.textContent = 'v' + ver;
-      if (foot) foot.textContent = 'v' + ver;
-    } else if (appVer && foot) {
-      foot.textContent = (appVer.textContent || '').replace(/^\s+|\s+$/g, '');
-    }
+    if (ver && appVer && (appVer.textContent||'').indexOf('[[') >= 0) appVer.textContent = 'v' + ver;
   } catch (eV) {}
 
   /* Defer GitHub self-update check so splash stays snappy. */

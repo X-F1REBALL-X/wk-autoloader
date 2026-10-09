@@ -37,15 +37,6 @@
     body.done #successMsg{display:block}
     body.done #progressPct{color:var(--mint)}
     body.done #progressBar{-webkit-transform:scaleX(1)!important;transform:scaleX(1)!important;background:linear-gradient(90deg,#15803d,#16a34a,#22c55e)}
-    #langbox{position:relative;margin:20px auto 0;width:max-content;z-index:40}
-    #langbtn{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;gap:8px;min-height:40px;padding:6px 16px;border-radius:999px;border:1px solid var(--edge2);background:var(--card);font:inherit;font-size:15px;font-weight:700;color:var(--ink2);cursor:pointer}
-    .flag{display:inline-block;width:22px;height:15px;-webkit-flex:0 0 22px;flex:0 0 22px;border-radius:3px;overflow:hidden}
-    .flag svg{display:block;width:100%;height:100%}
-    #langlist{display:none;position:absolute;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);bottom:calc(100% + 8px);z-index:60;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px;border-radius:14px;background:var(--card);border:1px solid var(--edge2);box-shadow:0 12px 30px rgba(60,45,25,.18);min-width:17rem}
-    #langlist.show{display:-ms-grid;display:grid}
-    .langopt{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:center;-webkit-align-items:center;align-items:center;gap:8px;border:0;cursor:pointer;color:var(--ink);font:inherit;font-size:14px;font-weight:700;padding:7px 9px;border-radius:10px;background:var(--card2);text-align:left}
-    .langopt[data-state="on"]{background:var(--pri);color:var(--onp)}
-    main[dir="rtl"] .langopt{text-align:right}
   </style>
 </head>
 <body>
@@ -59,7 +50,6 @@
       <div id="progressPct">0%</div>
       <p id="elapsedMsg">Elapsed 0:00</p>
       <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="installSuccess" data-i18n-html="1">Updated successfully<br>Opening WK Autoloader…</span></div>
-      <div id="langbox"><button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button><div id="langlist" role="menu" data-state="closed"></div></div>
     </section>
   </main>
 
@@ -80,9 +70,15 @@
       return s;
     }
     function readLang(){
-      var v='', m;
+      var v='', m, nav;
       try{ v=localStorage.getItem(LS_LANG_KEY)||''; }catch(e){}
       if(!v){ try{ m=document.cookie.match(/(?:^|; )ps5elfs-lang=([a-z]{2})/); if(m) v=m[1]; }catch(e2){} }
+      if(!v){
+        try{
+          nav=(navigator.languages&&navigator.languages[0])||navigator.language||'';
+          v=String(nav).toLowerCase().split('-')[0];
+        }catch(e3){ v=''; }
+      }
       return I18N[v]?v:'en';
     }
     function saveLang(code){
@@ -138,15 +134,8 @@
       }catch(e){}
     }
     function bindLangUi(){
+      /* No picker on installer — follow app language (localStorage/cookie) or browser. */
       LANG=readLang(); applyStaticI18n();
-      var btn=document.getElementById('langbtn');
-      if(btn) btn.addEventListener('click', function(ev){ try{ev.stopPropagation();}catch(e){} toggleLangList(); return false; });
-      document.addEventListener('click', function(ev){
-        var box=document.getElementById('langbox'), list=document.getElementById('langlist');
-        if(!list || list.getAttribute('data-state')!=='open') return;
-        if(box && box.contains(ev.target)) return;
-        toggleLangList(false);
-      });
     }
     global.WKAL_I18N={ t:t, setLang:setLang, bindLangUi:bindLangUi, getLang:function(){return LANG;} };
     global.t=t;

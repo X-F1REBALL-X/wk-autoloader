@@ -129,18 +129,24 @@ W.start = function () {
     return;
   }
 
-  /* Elf Launcher only: quick probe then arm. */
-  W.uiLog('Probing Elf Launcher HTTP :1000 ...', 'info');
-  W.launcher.probeElfLauncherHttp(function (up) {
+  /* Start immediately after countdown. Short probe only — never wait seconds. */
+  var started = false;
+  function arm(up) {
+    if (started) return;
+    started = true;
     W.state.elfHttpAlreadyUp = !!up;
     if (up) {
       W.uiLog(':1000 is up — Hybrid open-only (no ELF send).', 'success');
       W.startChain(true);
     } else {
-      W.uiLog(':1000 down — Hybrid will send on-disk elf-launcher.elf after JB.', 'info');
+      W.uiLog('Starting chain — will send elf-launcher.elf after JB if needed.', 'info');
       W.startChain(false);
     }
-  });
+  }
+  if (W.launcher && W.launcher.probeQuick) {
+    W.launcher.probeQuick(function (up) { arm(!!up); });
+  }
+  setTimeout(function () { arm(false); }, 250);
 };
 
 window.wkalAfterLangChange = function () {

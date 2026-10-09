@@ -189,7 +189,7 @@ W.launcher.probeElfLauncherHttp = function (cb) {
     if (done) return;
     tryFetch('http://127.0.0.1:1000/auto-list?t=' + Date.now());
   }, 400);
-  setTimeout(function () { fin(false); }, 3000);
+  setTimeout(function () { fin(false); }, 400);
 };
 
 
@@ -256,7 +256,7 @@ W.launcher.probeQuick = function (cb) {
       .then(function () { fin(true); })
       .catch(function () { fin(false); });
   } catch (e) { fin(false); return; }
-  setTimeout(function () { fin(false); }, 1200);
+  setTimeout(function () { fin(false); }, 250);
 };
 
 W.autoloadElfName = function () {

@@ -40,6 +40,7 @@
           <button type="button" id="cancelAutoStart" class="cancel" data-i18n="cancel" hidden>Cancel</button>
           <button type="button" id="openLauncherOnly" class="ghost" data-i18n="openLauncherOnly" hidden>Open Elf Launcher</button>
           <p class="hint" id="countdownHint"></p>
+          <p class="fwline" data-i18n="supportedFw">Supported firmware: 1.00–5.50, 7.00–13.60 · 6.xx not supported</p>
           <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
         </section>
 
@@ -49,9 +50,9 @@
           <p class="label slim" data-i18n="chainTitle">Chain</p>
           <div class="chips" id="chainRow" role="group" aria-label="Exploit chain">
             <button type="button" class="opt" id="chainAuto" data-chain="auto"><span class="t" data-i18n="chainAuto">Auto</span><span class="tag" data-i18n="recommended">Best</span></button>
-            <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span></button>
-            <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span></button>
-            <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2" hidden><span class="t">umtx2</span></button>
+            <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2"><span class="t">umtx2</span><span class="d">FW 1.00–5.50</span></button>
+            <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span><span class="d">FW 7.00–13.60</span></button>
+            <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span><span class="d">FW 7.00–12.00</span></button>
           </div>
           <p class="hint" id="chainHint"></p>
 

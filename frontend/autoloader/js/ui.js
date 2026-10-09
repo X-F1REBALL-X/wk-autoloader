@@ -156,9 +156,21 @@ W.ui.syncChainUi = function () {
   var hint = W.els.chainHint;
   var start = document.getElementById('startJailbreak');
 
-  if (umtx) umtx.hidden = !(fw && W.fwSupports('umtx2', fw));
-  if (poops) poops.hidden = !(fw && W.fwSupports('poops', fw));
-  if (relapse) relapse.hidden = !(fw && W.fwSupports('relapse', fw));
+  /* Always show every chain with its FW range; grey out the ones that
+   * cannot run on the detected firmware (unknown FW = leave all enabled). */
+  function gate(btn, chain) {
+    if (!btn) return;
+    var ok = !fw || W.fwSupports(chain, fw);
+    btn.hidden = false;
+    btn.disabled = !ok;
+    btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
+    btn.title = ok ? '' : W.t('chainOff');
+    if (ok) btn.classList.remove('off'); else btn.classList.add('off');
+  }
+  gate(umtx, 'umtx2');
+  gate(relapse, 'relapse');
+  gate(poops, 'poops');
+  if (auto) { auto.hidden = false; auto.disabled = !!(fw && fw.num >= 6.0 && fw.num < 7.0); }
 
   var opts = document.querySelectorAll('#chainRow .opt');
   var i;

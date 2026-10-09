@@ -164,6 +164,10 @@ iframe#exploit{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none
 .theme-row .themeopt{min-height:2.5rem;padding:.35rem .85rem;border-radius:999px;border:1px solid var(--edge2);background:var(--deck);font:inherit;font-weight:700;color:var(--ink2);cursor:pointer}
 .theme-row .themeopt.on{background:var(--pri);color:var(--onp);border-color:var(--pri)}
 .chips .opt{min-width:6.5rem;-webkit-flex:1 1 6.5rem;flex:1 1 6.5rem;padding:.85rem 1rem;min-height:3rem;-webkit-align-items:center;align-items:center}
-.chips .opt .d{display:none}
+.chips .opt .d{display:block;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
 .main{padding-top:.6rem}
 #themebox.theme-row{position:static}
+.opt.off,.opt:disabled{opacity:.45;cursor:default;box-shadow:none;background:var(--card2)}
+.opt.off .t,.opt:disabled .t{color:var(--mute)}
+.opt.off.on{border-color:var(--edge2);box-shadow:none}
+.fwline{margin:.7rem 0 0;color:var(--mute);font-size:.8rem;font-weight:700;letter-spacing:.01em}

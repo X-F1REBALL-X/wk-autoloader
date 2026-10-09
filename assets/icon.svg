@@ -1,13 +1,36 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#4f46e5"/>
-      <stop offset="100%" stop-color="#db2777"/>
+    <radialGradient id="bg" cx="30%" cy="22%" r="95%">
+      <stop offset="0" stop-color="#262c52"/>
+      <stop offset=".55" stop-color="#121624"/>
+      <stop offset="1" stop-color="#0b0d14"/>
+    </radialGradient>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset=".55" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2540"/>
+      <stop offset="1" stop-color="#151a2e"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
   </defs>
-  <rect width="1024" height="1024" rx="286" ry="286" fill="url(#bg)"/>
-  <g fill="#ffffff" font-family="Arial Black, Helvetica, sans-serif" font-weight="800" font-size="390" text-anchor="middle">
-    <text x="512" y="640">WK</text>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="226" r="130" fill="#fbbf24" opacity=".22" filter="url(#glow)"/>
+  <!-- shackle open -->
+  <g fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round">
+    <path d="M198 188 C198 148 314 148 314 188"/>
+    <path d="M198 188 v28"/>
+    <path d="M314 168 v20"/>
   </g>
+  <!-- lock body -->
+  <rect x="170" y="210" width="172" height="130" rx="32" fill="url(#chip)" stroke="url(#g)" stroke-width="12"/>
+  <!-- keyhole -->
+  <circle cx="256" cy="258" r="16" fill="url(#g)"/>
+  <path d="M248 258 v40 h16 v-40" fill="url(#g)"/>
+  <text x="256" y="440" text-anchor="middle" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif" font-weight="800" font-size="74" letter-spacing="6" fill="#eef0ff">WK</text>
+  <text x="256" y="478" text-anchor="middle" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif" font-weight="700" font-size="22" letter-spacing="5.5" fill="url(#g)">AUTOLOADER</text>
 </svg>

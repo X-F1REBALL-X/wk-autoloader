@@ -58,7 +58,6 @@ def include_in_zip(rel):
         return name.startswith("kexp") and name.endswith(".bin")
     if rel == "slopkit/readme.png":
         return False
-    if rel.endswith("/poops.html") or rel.endswith("/poops.js") or rel.endswith("poops.html") or rel.endswith("poops.js"):
         return False
     if rel.endswith(".sha256"):
         return False

@@ -206,8 +206,8 @@ int main(void) {
         snprintf(uid_param, sizeof(uid_param), "&uid=%08x", (unsigned int)uid);
     }
 
-    /* Companion homescreen pages (Elf Launcher + Payload Manager): install
-     * each only when missing. Never autoload unrelated payloads here. */
+    /* Companion homescreen page (Elf Launcher): install when missing.
+     * Never autoload unrelated payloads here. */
     wkali_install_companions();
 
     /* Always open the versioned browser URL and keep the server loop, even when

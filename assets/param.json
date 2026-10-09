@@ -1,6 +1,7 @@
 {
     "titleId": "SLKT00001",
-    "applicationCategoryType": 65536,
+    "applicationCategoryType": 0,
+    "contentBadgeType": 1,
     "deeplinkUri": "http://127.0.0.1:1022/app/index.html",
     "localizedParameters": {
         "defaultLanguage": "en-US",

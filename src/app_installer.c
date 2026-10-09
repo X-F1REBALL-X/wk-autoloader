@@ -32,8 +32,6 @@ INCASSET(param_json, "assets/param.json");
 INCASSET(icon0_png, "assets/icon0.png");
 INCASSET(elfl_param_json, "assets/companions/elf-launcher/param.json");
 INCASSET(elfl_icon0_png, "assets/companions/elf-launcher/icon0.png");
-INCASSET(pldm_param_json, "assets/companions/payload-manager/param.json");
-INCASSET(pldm_icon0_png, "assets/companions/payload-manager/icon0.png");
 
 int sceAppInstUtilInitialize(void);
 int sceAppInstUtilTerminate(void);
@@ -237,14 +235,10 @@ static int install_title_if_missing(const char *title_id, const char *label,
 int wkali_install_companions(void) {
   int rc = 0;
 
-  /* Only the two companion homescreen pages. Never autoload payloads. */
+  /* Elf Launcher homescreen page only. Never autoload payloads. */
   if (install_title_if_missing("ELFL00001", "Elf Launcher", elfl_param_json,
                                elfl_param_json_size, elfl_icon0_png,
                                elfl_icon0_png_size))
-    rc = -1;
-  if (install_title_if_missing("PLDM00001", "Payload Manager", pldm_param_json,
-                               pldm_param_json_size, pldm_icon0_png,
-                               pldm_icon0_png_size))
     rc = -1;
   return rc;
 }

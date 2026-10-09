@@ -1,11 +1,12 @@
 {
-    "titleId": "ELFL00001",
-    "applicationCategoryType": 65536,
-    "deeplinkUri": "http://127.0.0.1:1000/",
-    "localizedParameters": {
-	"defaultLanguage": "en-US",
-	"en-US": {
-	    "titleName": "Elf launcher"
+	"titleId": "ELFL00001",
+	"applicationCategoryType": 0,
+	"contentBadgeType": 1,
+	"deeplinkUri": "http://127.0.0.1:1000/",
+	"localizedParameters": {
+		"defaultLanguage": "en-US",
+		"en-US": {
+			"titleName": "Elf launcher"
+		}
 	}
-    }
 }

@@ -257,8 +257,7 @@ if ! pldmgr_from_local; then
     if [ -f "$PLDMGR_DEST" ]; then
       echo "warning: pldmgr download failed; keeping existing $PLDMGR_DEST"
     else
-      echo "Error: pldmgr.elf missing (no local copy, download failed)." >&2
-      exit 1
+      echo "warning: pldmgr.elf missing (optional for Elf-Launcher-only)." >&2
     fi
   }
 fi

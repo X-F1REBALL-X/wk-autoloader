@@ -18,20 +18,11 @@
       <div class="logo"><img src="logo.png" alt="" width="46" height="46" /></div>
       <div class="brand">
         <h1>WK <b>Autoloader</b></h1>
-        <div class="meta"><span class="ver" id="appVer">v[[VERSION_PLACEHOLDER]]</span><a class="by" href="https://github.com/X-F1REBALL-X" target="_blank" rel="noopener">X-F1REBALL-X</a></div>
+        <div class="meta"><span class="ver" id="appVer">v[[VERSION_PLACEHOLDER]]</span></div>
       </div>
       <div class="spacer"></div>
-      <span class="chip" id="detectChip" data-i18n="detecting">Detecting console...</span>
-      <div id="themebox">
-        <button type="button" id="themebtn" aria-haspopup="true" data-i18n="theme">Theme</button>
-        <div id="themelist" role="menu" data-state="closed">
-          <button type="button" class="themeopt" data-theme="" data-i18n="themeLight">Light</button>
-          <button type="button" class="themeopt" data-theme="gold" data-i18n="themeGold">Gold black</button>
-          <button type="button" class="themeopt" data-theme="black" data-i18n="themeBlack">Clean black</button>
-          <button type="button" class="themeopt" data-theme="gray" data-i18n="themeGray">Gray</button>
-          <button type="button" class="themeopt" data-theme="white" data-i18n="themeWhite">White</button>
-        </div>
-      </div>
+      <span class="chip" id="detectChip" data-i18n="detecting">Detecting…</span>
+      <button type="button" id="settingsBtn" class="barbtn" data-i18n="settings" aria-expanded="false">Settings</button>
       <div id="langbox">
         <button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button>
         <div id="langlist" role="menu" data-state="closed"></div>
@@ -41,48 +32,48 @@
     <div id="splash" aria-hidden="false">
       <main class="main">
         <section class="hero card" id="homeCard">
-          <p class="kicker" data-i18n="jailbreakHost">Jailbreak host</p>
+          <img class="hero-ico" src="elf-launcher-icon.png" width="72" height="72" alt="" />
           <h2 class="h" data-i18n="startJailbreakTitle">Start jailbreak</h2>
-          <p class="sub" data-i18n="homeSub">Loads the exploit, then opens Elf Launcher. Nothing else.</p>
+          <p class="sub" data-i18n="homeSubShort">Then opens Elf Launcher</p>
 
-          <div class="tile" id="elfTile">
-            <img class="tile-ico" src="elf-launcher-icon.png" width="56" height="56" alt="" />
-            <div>
-              <p class="tile-name" data-i18n="elfLauncher">Elf Launcher</p>
-              <p class="tile-desc" data-i18n="elfLauncherDesc">Open :1000, or send console mirror / tip ELF</p>
-            </div>
-          </div>
-
-          <button type="button" id="startJailbreak" class="go" data-i18n="startJailbreak">Start Jailbreak</button>
+          <button type="button" id="startJailbreak" class="go" data-i18n="startJailbreak">Start</button>
           <button type="button" id="cancelAutoStart" class="cancel" data-i18n="cancel" hidden>Cancel</button>
           <button type="button" id="openLauncherOnly" class="ghost" data-i18n="openLauncherOnly" hidden>Open Elf Launcher</button>
           <p class="hint" id="countdownHint"></p>
+          <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
         </section>
 
-        <div class="chips" id="chainRow" role="group" aria-label="Exploit chain">
-          <button type="button" class="opt" id="chainAuto" data-chain="auto"><span class="t" data-i18n="chainAuto">Auto</span><span class="d" data-i18n="chainAutoDesc">Firmware + history</span><span class="tag" data-i18n="recommended">Recommended</span></button>
-          <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span><span class="d" data-i18n="chainRelapseDesc">FW 7.00–13.60</span></button>
-          <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span><span class="d" data-i18n="chainPoopsDesc">FW 7.00–12.00 · offline</span></button>
-          <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2" hidden><span class="t">umtx2</span><span class="d" data-i18n="chainUmtx2Desc">FW 1.00–5.50</span></button>
-        </div>
-        <p class="hint" id="chainHint"></p>
-        <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported. No WebKit chain for 6.xx.</p>
+        <section class="settings card" id="settingsPanel" hidden>
+          <p class="label" data-i18n="settings">Settings</p>
 
-        <div class="panel">
-          <section class="mini card">
-            <p class="label" data-i18n="timingTitle">Timing</p>
-            <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start jailbreak</span></label>
-            <label class="field" for="startDelay"><span data-i18n="startDelay">Start delay</span><input type="range" id="startDelay" min="0" max="10" step="1" value="3" /><b id="startDelayVal">3s</b></label>
-            <label class="field" for="retryCount"><span data-i18n="retryCount">Safe retries</span><input type="range" id="retryCount" min="0" max="3" step="1" value="1" /><b id="retryCountVal">1</b></label>
-            <label class="toggle" for="soundToggle"><input type="checkbox" id="soundToggle" checked /><span data-i18n="soundFeedback">Sound & vibration</span></label>
-            <p class="hint" data-i18n="choiceSaved">Settings are saved on this console</p>
-          </section>
-          <section class="mini card" id="historyCard">
-            <p class="label" data-i18n="historyTitle">Recent jailbreaks</p>
-            <div id="historyList" class="history"></div>
-            <p class="hint" id="historyEmpty" data-i18n="historyEmpty">No runs yet on this console</p>
-          </section>
-        </div>
+          <p class="label slim" data-i18n="chainTitle">Chain</p>
+          <div class="chips" id="chainRow" role="group" aria-label="Exploit chain">
+            <button type="button" class="opt" id="chainAuto" data-chain="auto"><span class="t" data-i18n="chainAuto">Auto</span><span class="tag" data-i18n="recommended">Best</span></button>
+            <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span></button>
+            <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span></button>
+            <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2" hidden><span class="t">umtx2</span></button>
+          </div>
+          <p class="hint" id="chainHint"></p>
+
+          <p class="label slim" data-i18n="timingTitle">Timing</p>
+          <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start</span></label>
+          <label class="field" for="startDelay"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0" max="10" step="1" value="3" /><b id="startDelayVal">3s</b></label>
+          <label class="field" for="retryCount"><span data-i18n="retryCount">Retries</span><input type="range" id="retryCount" min="0" max="3" step="1" value="1" /><b id="retryCountVal">1</b></label>
+          <label class="toggle" for="soundToggle"><input type="checkbox" id="soundToggle" checked /><span data-i18n="soundFeedback">Sound & vibration</span></label>
+
+          <p class="label slim" data-i18n="theme">Theme</p>
+          <div id="themebox" class="theme-row">
+            <button type="button" class="themeopt" data-theme="" data-i18n="themeLight">Light</button>
+            <button type="button" class="themeopt" data-theme="gold" data-i18n="themeGold">Gold</button>
+            <button type="button" class="themeopt" data-theme="black" data-i18n="themeBlack">Black</button>
+            <button type="button" class="themeopt" data-theme="gray" data-i18n="themeGray">Gray</button>
+            <button type="button" class="themeopt" data-theme="white" data-i18n="themeWhite">White</button>
+          </div>
+
+          <p class="label slim" data-i18n="historyTitle">Recent</p>
+          <div id="historyList" class="history"></div>
+          <p class="hint" id="historyEmpty" data-i18n="historyEmpty">No runs yet</p>
+        </section>
       </main>
     </div>
 
@@ -95,10 +86,10 @@
         <p class="status" id="statusMsg" data-i18n="jailbreakStarted">Jailbreak started</p>
         <div id="progressContainer" hidden><div id="progressBar"></div></div>
         <p id="elapsedMsg">Elapsed 0:00</p>
-        <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Jailbreak completed successfully</span></div>
-        <div id="failMsg" data-i18n="jailbreakFail">Jailbreak failed - restart your console</div>
+        <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Done</span></div>
+        <div id="failMsg" data-i18n="jailbreakFail">Failed — restart the console</div>
         <div id="stallMsg" class="stall" hidden></div>
-        <div id="progressLabel" hidden data-i18n="jailbreakInProgress">Jailbreak in progress</div>
+        <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
         <div id="nextTile" class="next" hidden>
           <img src="elf-launcher-icon.png" width="56" height="56" alt="" />
           <div><p class="n" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d">http://127.0.0.1:1000</p></div>

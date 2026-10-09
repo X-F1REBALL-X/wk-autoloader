@@ -20,34 +20,38 @@ W.ui.applyTheme = function (id) {
 };
 
 W.ui.bindTheme = function () {
-  var btn = document.getElementById('themebtn');
-  var list = document.getElementById('themelist');
-  var box = document.getElementById('themebox');
   var saved = W.lsGet(W.LS_THEME_KEY, '');
   if (/^(gray|white|gold|black)$/.test(saved)) W.ui.applyTheme(saved);
   else W.ui.applyTheme('');
-  function toggle(force) {
-    if (!list) return;
-    var on = (force === true || force === false) ? force : list.getAttribute('data-state') !== 'open';
-    list.setAttribute('data-state', on ? 'open' : 'closed');
+  function paintOn() {
+    var cur = W.lsGet(W.LS_THEME_KEY, '') || '';
+    var opts = document.querySelectorAll('.themeopt');
+    var i;
+    for (i = 0; i < opts.length; i++) {
+      var th = opts[i].getAttribute('data-theme') || '';
+      if (th === cur) opts[i].classList.add('on');
+      else opts[i].classList.remove('on');
+    }
   }
-  if (btn) btn.addEventListener('click', function (ev) {
-    try { ev.stopPropagation(); } catch (e) {}
-    toggle();
-    return false;
-  });
+  paintOn();
   var opts = document.querySelectorAll('.themeopt');
   var i;
   for (i = 0; i < opts.length; i++) {
     opts[i].addEventListener('click', function () {
       W.ui.applyTheme(this.getAttribute('data-theme') || '');
-      toggle(false);
+      paintOn();
     });
   }
-  document.addEventListener('click', function (ev) {
-    if (!list || list.getAttribute('data-state') !== 'open') return;
-    if (box && box.contains(ev.target)) return;
-    toggle(false);
+};
+
+W.ui.bindSettings = function () {
+  var btn = document.getElementById('settingsBtn');
+  var panel = document.getElementById('settingsPanel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function () {
+    var open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 };
 
@@ -234,6 +238,7 @@ W.ui.refreshCfiFromLauncher = function () {
 };
 
 W.ui.bindHome = function () {
+  if (W.ui.bindSettings) W.ui.bindSettings();
   var go = document.getElementById('startJailbreak');
   var cancel = document.getElementById('cancelAutoStart');
   var auto = document.getElementById('autoJailbreak');

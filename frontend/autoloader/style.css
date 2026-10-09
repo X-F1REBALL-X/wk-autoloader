@@ -157,6 +157,12 @@ iframe#exploit{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none
 .hero .h{font-size:1.85rem}
 .hero .sub{margin-bottom:1.35rem}
 .go{min-height:3.6rem;font-size:1.25rem;max-width:20rem}
+.startrow{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-align:stretch;-webkit-align-items:stretch;align-items:stretch;width:100%;max-width:22rem;margin:0 auto}
+.startrow .go,.startrow .cancel{-webkit-box-flex:1;-webkit-flex:1 1 0;flex:1 1 0;width:auto;min-width:0;max-width:none;margin:0;min-height:3.6rem;border-radius:16px;font-size:1.25rem;font-weight:800}
+.startrow .cancel{border:2px solid var(--pri);color:var(--pri);background:var(--deck)}
+.startrow .cancel:focus,.startrow .cancel:hover{background:var(--pri);color:var(--onp)}
+.startrow>*+*{margin-left:.6rem}
+[dir=rtl] .startrow>*+*{margin-left:0;margin-right:.6rem}
 .settings{width:min(720px,100%);text-align:start}
 .settings[hidden]{display:none!important}
 .settings .label.slim{margin-top:1rem;margin-bottom:.4rem}

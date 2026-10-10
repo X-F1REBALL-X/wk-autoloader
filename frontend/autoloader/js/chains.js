@@ -56,7 +56,7 @@ W.historyScore = function (chain) {
 
 /* Auto: umtx2 1-5.50; 6.xx unsupported; Relapse default 7-13.60.
    Poops is optional alt on 7-12 (offline-capable). History may prefer Poops
-   when it clearly wins locally — Relapse stays default otherwise.
+   when it clearly wins locally - Relapse stays default otherwise.
    Relapse is NOT treated as network-required. */
 W.recommendChain = function (fw) {
   if (!fw) return null;
@@ -107,7 +107,7 @@ W.pickExploit = function () {
   var pref = W.getChainPref();
   if (pref !== 'auto') {
     if (W.fwSupports(pref, fw)) return pref;
-    W.uiLog('Saved chain ' + pref + ' not for FW ' + fw.str + ' — using auto', 'warning');
+    W.uiLog('Saved chain ' + pref + ' not for FW ' + fw.str + ', using auto', 'warning');
   }
   var rec = W.recommendChain(fw);
   if (rec) return rec;

@@ -129,17 +129,17 @@ W.start = function () {
     return;
   }
 
-  /* Start immediately after countdown. Short probe only — never wait seconds. */
+  /* Start immediately after countdown. Short probe only - never wait seconds. */
   var started = false;
   function arm(up) {
     if (started) return;
     started = true;
     W.state.elfHttpAlreadyUp = !!up;
     if (up) {
-      W.uiLog(':1000 is up — Hybrid open-only (no ELF send).', 'success');
+      W.uiLog(':1000 is up, Hybrid open-only (no ELF send).', 'success');
       W.startChain(true);
     } else {
-      W.uiLog('Starting chain — will send elf-launcher.elf after JB if needed.', 'info');
+      W.uiLog('Starting chain, will send elf-launcher.elf after JB if needed.', 'info');
       W.startChain(false);
     }
   }

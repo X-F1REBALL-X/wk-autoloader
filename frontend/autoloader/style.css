@@ -1,11 +1,4 @@
-/* WK Autoloader — layout B (Elf Launcher pearl theme + 5 themes) */
-@font-face{font-family:"WK Hebrew";font-weight:300;font-display:swap;src:url(fonts/he-400.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:400;font-display:swap;src:url(fonts/he-400.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:500;font-display:swap;src:url(fonts/he-400.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:600;font-display:swap;src:url(fonts/he-600.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:700;font-display:swap;src:url(fonts/he-600.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:800;font-display:swap;src:url(fonts/he-600.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
-@font-face{font-family:"WK Hebrew";font-weight:900;font-display:swap;src:url(fonts/he-600.woff) format("woff");unicode-range:U+0590-05FF,U+FB1D-FB4F,U+20AA}
+/* WK Autoloader - layout B (Elf Launcher pearl theme + 5 themes) */
 html{font-synthesis:none}
 :root{--bg:#f7f4ee;--void:#efe9dc;--deck:#fffdf9;--card:#fffdf8;--card2:#f4efe5;--edge:#e5ddcd;--edge2:#cfc2ab;
 --ink:#231c14;--ink2:#463b2d;--mute:#665a49;--pri:#c2410c;--pri2:#ea580c;--rose:#d97706;--mint:#047857;--amber:#b45309;--bad:#b91c1c;--onp:#fff;
@@ -20,7 +13,7 @@ html[data-theme=gold] body,html[data-theme=black] body{background:var(--bg)}
 html[data-theme=gold] body{background:radial-gradient(70vw 60vh at 85% -10%,rgba(245,158,11,.07),transparent 60%),var(--bg)}
 *{margin:0;padding:0;-webkit-box-sizing:border-box;box-sizing:border-box}
 html,body{height:100%}
-body{font:16px/1.4 "WK Hebrew","Inter","Segoe UI","SF Pro Display","Helvetica Neue",system-ui,sans-serif;color:var(--ink);
+body{font:16px/1.4 "Inter","Segoe UI","SF Pro Display","Helvetica Neue",system-ui,sans-serif;color:var(--ink);
 background:radial-gradient(70vw 60vh at 85% -10%,rgba(249,115,22,.06),transparent 60%),radial-gradient(60vw 55vh at -10% 110%,rgba(245,158,11,.05),transparent 60%),var(--bg);min-height:100%;overflow-x:hidden}
 .wrap{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;min-height:100vh;padding:1.1rem 1.4rem 1.4rem}
 .bar{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:.5rem .85rem;margin-bottom:1rem;background:rgba(255,253,248,.92);border:1px solid var(--edge);border-radius:20px;box-shadow:0 2px 10px rgba(60,45,25,.07);gap:.5rem;-webkit-flex-wrap:wrap;flex-wrap:wrap}
@@ -177,3 +170,15 @@ iframe#exploit{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none
 .opt.off .t,.opt:disabled .t{color:var(--mute)}
 .opt.off.on{border-color:var(--edge2);box-shadow:none}
 .fwline{margin:.7rem 0 0;color:var(--mute);font-size:.8rem;font-weight:700;letter-spacing:.01em}
+
+.go.is-cancel{background:var(--deck);color:var(--pri);border:2px solid var(--pri);box-shadow:none}
+.go.is-cancel:focus,.go.is-cancel:hover{background:var(--pri);color:var(--onp)}
+
+/* Settings: always-open side panel */
+.settings{position:fixed;top:0;right:0;bottom:0;width:22rem;max-width:none;margin:0;border-radius:0;overflow-y:auto;z-index:40;border-width:0 0 0 1px;box-shadow:-8px 0 30px rgba(40,30,15,.10);padding:1.2rem 1.2rem 1.6rem}
+.settings[hidden]{display:block!important}
+#splash{padding-right:22rem}
+[dir=rtl] .settings{right:auto;left:0;border-width:0 1px 0 0;box-shadow:8px 0 30px rgba(40,30,15,.10)}
+[dir=rtl] #splash{padding-right:0;padding-left:22rem}
+body:not(.done):not(.fail) #topbar{margin-right:22rem}
+[dir=rtl] body:not(.done):not(.fail) #topbar{margin-right:0;margin-left:22rem}

@@ -60,12 +60,12 @@
       var dir = '[[APP_DIR_PLACEHOLDER]]';
       var version = '[[VERSION_PLACEHOLDER]]';
       var statusEl = document.getElementById('status');
-      /* Absolute live target — same host as param.json deeplinkUri / installer
+      /* Absolute live target - same host as param.json deeplinkUri / installer
          post-install open. Bypasses stale AppCache when :1022 is up. */
       var LIVE_APP = 'http://127.0.0.1:1022/app/' + dir + '/index.html';
 
       function fail() {
-        statusEl.textContent = 'Unable to open — run the installer again.';
+        statusEl.textContent = 'Unable to open. Run the installer again.';
         statusEl.className = 'bad';
       }
 
@@ -94,7 +94,7 @@
 
       /* Soft-gate: __complete__ (manifest last entry) proves AppCache is whole.
          On success use relative versioned path (offline OK). On fail/mismatch
-         probe live /version — if :1022 is up, open live /app (absolute). */
+         probe live /version - if :1022 is up, open live /app (absolute). */
       /* Prefer live :1022 when installer is still up (avoids half-filled AppCache 404). */
       var live = new XMLHttpRequest();
       live.open('GET', 'http://127.0.0.1:1022/version', true);

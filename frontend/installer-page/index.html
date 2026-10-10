@@ -56,9 +56,9 @@
   <script>
   (function(global){
     'use strict';
-    var LANGS=[{"code": "en", "name": "English", "flag": "us"}, {"code": "ar", "name": "العربية", "flag": "sa", "rtl": true}, {"code": "es", "name": "Español", "flag": "es"}, {"code": "fr", "name": "Français", "flag": "fr"}, {"code": "de", "name": "Deutsch", "flag": "de"}, {"code": "pt", "name": "Português", "flag": "br"}, {"code": "ru", "name": "Русский", "flag": "ru"}, {"code": "ja", "name": "日本語", "flag": "jp"}, {"code": "zh", "name": "中文", "flag": "cn"}, {"code": "it", "name": "Italiano", "flag": "it"}, {"code": "he", "name": "עברית", "flag": "il", "rtl": true}];
+    var LANGS=[{"code": "en", "name": "English", "flag": "us"}, {"code": "ar", "name": "العربية", "flag": "sa", "rtl": true}, {"code": "es", "name": "Español", "flag": "es"}, {"code": "fr", "name": "Français", "flag": "fr"}, {"code": "de", "name": "Deutsch", "flag": "de"}, {"code": "pt", "name": "Português", "flag": "br"}, {"code": "ru", "name": "Русский", "flag": "ru"}, {"code": "ja", "name": "日本語", "flag": "jp"}, {"code": "zh", "name": "中文", "flag": "cn"}, {"code": "it", "name": "Italiano", "flag": "it"}];
     var FLAGS={"us": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><g fill=\"#b22234\"><rect width=\"30\" height=\"1.54\"/><rect y=\"3.08\" width=\"30\" height=\"1.54\"/><rect y=\"6.15\" width=\"30\" height=\"1.54\"/><rect y=\"9.23\" width=\"30\" height=\"1.54\"/><rect y=\"12.3\" width=\"30\" height=\"1.54\"/><rect y=\"15.4\" width=\"30\" height=\"1.54\"/><rect y=\"18.46\" width=\"30\" height=\"1.54\"/></g><rect width=\"13\" height=\"10.77\" fill=\"#3c3b6e\"/><g fill=\"#fff\"><circle cx=\"2.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"6.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"10.5\" cy=\"2.2\" r=\".7\"/><circle cx=\"4.5\" cy=\"5.4\" r=\".7\"/><circle cx=\"8.5\" cy=\"5.4\" r=\".7\"/><circle cx=\"2.5\" cy=\"8.6\" r=\".7\"/><circle cx=\"6.5\" cy=\"8.6\" r=\".7\"/><circle cx=\"10.5\" cy=\"8.6\" r=\".7\"/></g></svg>", "sa": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#006c35\"/><path d=\"M8 8.5h14M9 10c2 .8 4 .8 6 0s4-.8 6 0\" stroke=\"#fff\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M8 14h13l1.5-1\" stroke=\"#fff\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "es": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#aa151b\"/><rect y=\"5\" width=\"30\" height=\"10\" fill=\"#f1bf00\"/></svg>", "fr": "<svg viewBox=\"0 0 30 20\"><rect width=\"10\" height=\"20\" fill=\"#0055a4\"/><rect x=\"10\" width=\"10\" height=\"20\" fill=\"#fff\"/><rect x=\"20\" width=\"10\" height=\"20\" fill=\"#ef4135\"/></svg>", "de": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"6.67\" fill=\"#000\"/><rect y=\"6.67\" width=\"30\" height=\"6.67\" fill=\"#dd0000\"/><rect y=\"13.33\" width=\"30\" height=\"6.67\" fill=\"#ffce00\"/></svg>", "br": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#009c3b\"/><path d=\"M15 2.5L27 10 15 17.5 3 10z\" fill=\"#ffdf00\"/><circle cx=\"15\" cy=\"10\" r=\"4.2\" fill=\"#002776\"/><path d=\"M11 9.3c2.7-.6 5.6-.3 8 .9\" stroke=\"#fff\" stroke-width=\".7\" fill=\"none\"/></svg>", "ru": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"6.67\" fill=\"#fff\"/><rect y=\"6.67\" width=\"30\" height=\"6.67\" fill=\"#0039a6\"/><rect y=\"13.33\" width=\"30\" height=\"6.67\" fill=\"#d52b1e\"/></svg>", "jp": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><circle cx=\"15\" cy=\"10\" r=\"6\" fill=\"#bc002d\"/></svg>", "cn": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#de2910\"/><path d=\"M5 2.5l1.18 3.6H10l-3.1 2.2 1.2 3.6L5 9.7l-3.1 2.2 1.2-3.6L0 6.1h3.8z\" fill=\"#ffde00\"/><g fill=\"#ffde00\"><circle cx=\"11\" cy=\"2.5\" r=\".9\"/><circle cx=\"13\" cy=\"4.6\" r=\".9\"/><circle cx=\"13\" cy=\"7.6\" r=\".9\"/><circle cx=\"11\" cy=\"9.6\" r=\".9\"/></g></svg>", "it": "<svg viewBox=\"0 0 30 20\"><rect width=\"10\" height=\"20\" fill=\"#009246\"/><rect x=\"10\" width=\"10\" height=\"20\" fill=\"#fff\"/><rect x=\"20\" width=\"10\" height=\"20\" fill=\"#ce2b37\"/></svg>", "il": "<svg viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><rect y=\"2.2\" width=\"30\" height=\"2.4\" fill=\"#0038b8\"/><rect y=\"15.4\" width=\"30\" height=\"2.4\" fill=\"#0038b8\"/><path d=\"M15 6.2l1.35 4.15h4.35l-3.52 2.56 1.35 4.15L15 14.5l-3.53 2.56 1.35-4.15-3.52-2.56h4.35z\" fill=\"none\" stroke=\"#0038b8\" stroke-width=\"1\"/></svg>"};
-    var I18N={"en": {"language": "Language", "langSet": "Language: English", "installing": "Installing…", "installSuccess": "Updated successfully\nOpening WK Autoloader…", "elapsed": "Elapsed {t}", "cancel": "Cancel"}, "ar": {"language": "اللغة", "langSet": "اللغة: العربية", "installing": "جارٍ التثبيت…", "installSuccess": "تم التحديث بنجاح\nجارٍ فتح WK Autoloader…", "elapsed": "الوقت المنقضي {t}", "cancel": "إلغاء"}, "es": {"language": "Idioma", "langSet": "Idioma: Español", "installing": "Instalando…", "installSuccess": "Actualizado correctamente\nAbriendo WK Autoloader…", "elapsed": "Transcurrido {t}", "cancel": "Cancelar"}, "fr": {"language": "Langue", "langSet": "Langue : Français", "installing": "Installation…", "installSuccess": "Mise à jour réussie\nOuverture de WK Autoloader…", "elapsed": "Écoulé {t}", "cancel": "Annuler"}, "de": {"language": "Sprache", "langSet": "Sprache: Deutsch", "installing": "Installation…", "installSuccess": "Erfolgreich aktualisiert\nWK Autoloader wird geöffnet…", "elapsed": "Vergangen {t}", "cancel": "Abbrechen"}, "pt": {"language": "Idioma", "langSet": "Idioma: Português", "installing": "Instalando…", "installSuccess": "Atualizado com sucesso\nAbrindo WK Autoloader…", "elapsed": "Decorrido {t}", "cancel": "Cancelar"}, "ru": {"language": "Язык", "langSet": "Язык: Русский", "installing": "Установка…", "installSuccess": "Успешно обновлено\nОткрытие WK Autoloader…", "elapsed": "Прошло {t}", "cancel": "Отмена"}, "ja": {"language": "言語", "langSet": "言語: 日本語", "installing": "インストール中…", "installSuccess": "更新に成功しました\nWK Autoloader を開いています…", "elapsed": "経過 {t}", "cancel": "キャンセル"}, "zh": {"language": "语言", "langSet": "语言：中文", "installing": "正在安装…", "installSuccess": "更新成功\n正在打开 WK Autoloader…", "elapsed": "已用时 {t}", "cancel": "取消"}, "it": {"language": "Lingua", "langSet": "Lingua: Italiano", "installing": "Installazione…", "installSuccess": "Aggiornato correttamente\nApertura di WK Autoloader…", "elapsed": "Trascorso {t}", "cancel": "Annulla"}, "he": {"language": "שפה", "langSet": "שפה: עברית", "installing": "מתקין…", "installSuccess": "עודכן בהצלחה\nפותח את WK Autoloader…", "elapsed": "חלף {t}", "cancel": "ביטול"}};
+    var I18N={"en": {"language": "Language", "langSet": "Language: English", "installing": "Installing…", "installSuccess": "Updated successfully\nOpening WK Autoloader…", "elapsed": "Elapsed {t}", "cancel": "Cancel"}, "ar": {"language": "اللغة", "langSet": "اللغة: العربية", "installing": "جارٍ التثبيت…", "installSuccess": "تم التحديث بنجاح\nجارٍ فتح WK Autoloader…", "elapsed": "الوقت المنقضي {t}", "cancel": "إلغاء"}, "es": {"language": "Idioma", "langSet": "Idioma: Español", "installing": "Instalando…", "installSuccess": "Actualizado correctamente\nAbriendo WK Autoloader…", "elapsed": "Transcurrido {t}", "cancel": "Cancelar"}, "fr": {"language": "Langue", "langSet": "Langue : Français", "installing": "Installation…", "installSuccess": "Mise à jour réussie\nOuverture de WK Autoloader…", "elapsed": "Écoulé {t}", "cancel": "Annuler"}, "de": {"language": "Sprache", "langSet": "Sprache: Deutsch", "installing": "Installation…", "installSuccess": "Erfolgreich aktualisiert\nWK Autoloader wird geöffnet…", "elapsed": "Vergangen {t}", "cancel": "Abbrechen"}, "pt": {"language": "Idioma", "langSet": "Idioma: Português", "installing": "Instalando…", "installSuccess": "Atualizado com sucesso\nAbrindo WK Autoloader…", "elapsed": "Decorrido {t}", "cancel": "Cancelar"}, "ru": {"language": "Язык", "langSet": "Язык: Русский", "installing": "Установка…", "installSuccess": "Успешно обновлено\nОткрытие WK Autoloader…", "elapsed": "Прошло {t}", "cancel": "Отмена"}, "ja": {"language": "言語", "langSet": "言語: 日本語", "installing": "インストール中…", "installSuccess": "更新に成功しました\nWK Autoloader を開いています…", "elapsed": "経過 {t}", "cancel": "キャンセル"}, "zh": {"language": "语言", "langSet": "语言：中文", "installing": "正在安装…", "installSuccess": "更新成功\n正在打开 WK Autoloader…", "elapsed": "已用时 {t}", "cancel": "取消"}, "it": {"language": "Lingua", "langSet": "Lingua: Italiano", "installing": "Installazione…", "installSuccess": "Aggiornato correttamente\nApertura di WK Autoloader…", "elapsed": "Trascorso {t}", "cancel": "Annulla"}};
     var LANG='en';
     var LS_LANG_KEY='ps5elfs-lang';
     function langInfo(code){ var i; for(i=0;i<LANGS.length;i++){ if(LANGS[i].code===code) return LANGS[i]; } return LANGS[0]; }
@@ -134,7 +134,7 @@
       }catch(e){}
     }
     function bindLangUi(){
-      /* No picker on installer — follow app language (localStorage/cookie) or browser. */
+      /* No picker on installer - follow app language (localStorage/cookie) or browser. */
       LANG=readLang(); applyStaticI18n();
     }
     global.WKAL_I18N={ t:t, setLang:setLang, bindLangUi:bindLangUi, getLang:function(){return LANG;} };
@@ -162,7 +162,7 @@
     var settleTimer=0,progressCompleteAt=0,lastSafeUpdate=0;
     var APP_VERSION='[[VERSION_PLACEHOLDER]]';
     var AUTOLOADER_URL='http://127.0.0.1:1022/app/index.html';
-    /* Soft max before settle — leave 100% for real completion only. */
+    /* Soft max before settle - leave 100% for real completion only. */
     var SOFT_CAP=99;
     var CACHE_RETRY_MS=8000;
     var OPEN_POLL_MS=500;
@@ -238,7 +238,7 @@
     function cacheStatus(){
       try{ return applicationCache.status; }catch(e){ return -1; }
     }
-    /* Never call update() while CHECKING/DOWNLOADING — PS5 WebKit restarts the
+    /* Never call update() while CHECKING/DOWNLOADING - PS5 WebKit restarts the
        fetch and the bar sits at soft-cap forever. */
     function safeCacheUpdate(){
       try{
@@ -314,7 +314,7 @@
       };
       xhr.send();
     }
-    /* Cache is whole — jump to 100 and /install immediately (no 700ms hold). */
+    /* Cache is whole - jump to 100 and /install immediately (no 700ms hold). */
     function fillBarThenInstall(){
       if(barFull||completed) return;
       barFull=true;
@@ -451,7 +451,7 @@
               onTerminalCacheEvent();
             } else if(progressComplete && progressCompleteAt &&
                       (Date.now()-progressCompleteAt)>=SETTLE_AFTER_COMPLETE_MS){
-              /* loaded==total already — do not wait forever for a missing cached event. */
+              /* loaded==total already - do not wait forever for a missing cached event. */
               verifyCompleteThenSettle();
             }
           }catch(e){}

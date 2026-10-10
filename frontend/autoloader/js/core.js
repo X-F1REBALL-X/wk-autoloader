@@ -60,8 +60,8 @@ W.LS_THEME_KEY = 'wkal-theme';
 W.LS_SOUND_KEY = 'wkal_sound';
 W.LS_HISTORY_KEY = 'wkal_jb_history';
 W.CHOICE_ELF_LAUNCHER = 'elf-launcher';
-W.BUNDLED_ELFLAUNCHER_SHA = '5dff650fbc68e5a7729ca5cb8031d8792a9ddb0a34b8fd7b268a3622842cfc81';
-W.BUNDLED_ELFLAUNCHER_VER = '';
+W.BUNDLED_ELFLAUNCHER_SHA = '876e6c1173149e82334c2bac133c94acece52547ad1c1d4be9e694323bf24bb5';
+W.BUNDLED_ELFLAUNCHER_VER = '2.0.0';
 W.CONSOLE_MIRROR_URI = 'file:///data/elf-launcher/mirror/elf-launcher.elf';
 W.STALL_MS = 18000;
 
@@ -370,7 +370,7 @@ W.detectCfiPreJb = function () {
   return W.getCachedCfi(); /* fallback: saved from a prior JB */
 };
 
-/* After JB / when :1000 is up — persist model for next splash. */
+/* After JB / when :1000 is up - persist model for next splash. */
 W.persistCfiFromLauncher = function (cb) {
   function done(p) { if (typeof cb === 'function') try { cb(p || null); } catch (e) {} }
   function take(raw, src) {
@@ -408,7 +408,7 @@ W.consoleLabel = function () {
   var cfi = W.getCachedCfi();
   var parts = [];
   if (fw) parts.push('FW ' + fw.str);
-  else parts.push('FW —');
+  else parts.push('FW -');
   if (cfi) parts.push(cfi.code + ' · ' + cfi.label);
   else parts.push(W.t ? W.t('modelAfterJb') : 'model after JB');
   return parts.join(' · ');

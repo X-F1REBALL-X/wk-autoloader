@@ -115,13 +115,13 @@ int wkali_install_app(void) {
   snprintf(icon_path, sizeof(icon_path), "/user/app/%s/sce_sys/icon0.png",
            title_id);
 
-  if (wkali_page_installed()) {
-    wkali_log("[WKALI] Page already present (%s). Reinstalling/updating...\n",
-              title_id);
-    wkali_notify("Updating WK Autoloader...");
-  } else {
+  int first_install = !wkali_page_installed();
+  if (first_install) {
     wkali_log("[WKALI] Installing browser launcher app (%s)...\n", title_id);
-    wkali_notify("Installing WK Autoloader...");
+    wkali_notify("Installing…");
+  } else {
+    wkali_log("[WKALI] Page already present (%s). Updating quietly…\n",
+              title_id);
   }
 
   int err;
@@ -158,7 +158,10 @@ int wkali_install_app(void) {
   }
 
   wkali_log("[WKALI] Launcher app installed successfully.\n");
-  wkali_notify("WK Autoloader Ready!");
+  if (first_install)
+    wkali_notify("Home icon installed");
+  else
+    wkali_notify("WK Autoloader updated");
 
   sceAppInstUtilTerminate();
   return 0;
@@ -188,7 +191,7 @@ static int install_title_if_missing(const char *title_id, const char *label,
   }
 
   wkali_log("[WKALI] Installing %s (%s)...\n", label, title_id);
-  wkali_notify("Installing %s...", label);
+  wkali_notify("Installing…");
 
   if ((err = sceAppInstUtilInitialize())) {
     wkali_log("[WKALI] sceAppInstUtilInitialize: error 0x%08X\n", err);
@@ -227,7 +230,7 @@ static int install_title_if_missing(const char *title_id, const char *label,
   }
 
   wkali_log("[WKALI] %s installed successfully.\n", label);
-  wkali_notify("%s Ready!", label);
+  wkali_notify("Home icon installed");
   sceAppInstUtilTerminate();
   return 0;
 }

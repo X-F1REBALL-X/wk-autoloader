@@ -2,6 +2,6 @@
 (function () {
   'use strict';
   if (typeof console !== 'undefined' && console.warn) {
-    console.warn('[wkal] app.js is a stub — load js/core.js … js/main.js via index.html');
+    console.warn('[wkal] app.js is a stub - load js/core.js … js/main.js via index.html');
   }
 })();

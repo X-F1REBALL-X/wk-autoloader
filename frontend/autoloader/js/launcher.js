@@ -234,7 +234,7 @@ W.launcher.ensureRunning = function (cb) {
     W.launcher.sendUrlToElfldr(W.CONSOLE_MIRROR_URI, function () {
       W.launcher.probeElfLauncherHttp(function (up2) {
         if (up2) { W.state.elfHttpAlreadyUp = true; if (cb) cb(true); return; }
-        W.uiLog('Mirror miss — resend bundled tip elf-launcher.elf', 'info');
+        W.uiLog('Mirror miss, resend bundled tip elf-launcher.elf', 'info');
         W.launcher.requestResendAutoload('elf-launcher.elf');
         setTimeout(function () {
           W.launcher.probeElfLauncherHttp(function (up3) {
@@ -310,7 +310,7 @@ W.launcher.openElfLauncherPage = function () {
   function maybeNavigate(alreadyUp) {
     W.launcher.browserWantsOpen(function (wantOpen) {
       if (!wantOpen) {
-        W.uiLog('Elf Launcher :1000 ready — open-after-JB is Off (home tile / URL still work)', 'success');
+        W.uiLog('Elf Launcher :1000 ready, open-after-JB is Off (home tile / URL still work)', 'success');
         if (W.els.nextTile) {
           try {
             W.els.nextTile.hidden = false;
@@ -349,7 +349,7 @@ W.launcher.openElfLauncherPage = function () {
         maybeNavigate(true);
         return;
       }
-      W.uiLog('Mirror miss — tip / resend path for bundled elf-launcher.elf', 'info');
+      W.uiLog('Mirror miss, tip / resend path for bundled elf-launcher.elf', 'info');
       maybeNavigate(false);
     });
   });
@@ -408,7 +408,7 @@ W.launcher.onAutoloadResult = function (data) {
       return;
     }
     W.launcher.openElfLauncherPage();
-    /* Save CFI after JB when launcher is up — shown from the next splash. */
+    /* Save CFI after JB when launcher is up - shown from the next splash. */
     setTimeout(function () {
       if (W.persistCfiFromLauncher) W.persistCfiFromLauncher(function () {});
     }, 3500);

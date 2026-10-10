@@ -48,10 +48,16 @@ W.ui.bindSettings = function () {
   var btn = document.getElementById('settingsBtn');
   var panel = document.getElementById('settingsPanel');
   if (!btn || !panel) return;
-  btn.addEventListener('click', function () {
-    var open = panel.hidden;
+  function setOpen(open) {
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.classList.toggle('drawer-open', open);
+  }
+  btn.addEventListener('click', function () { setOpen(panel.hidden); });
+  var x = document.getElementById('settingsClose');
+  if (x) x.addEventListener('click', function () { setOpen(false); btn.focus(); });
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Escape' || e.keyCode === 27) && !panel.hidden) setOpen(false);
   });
 };
 
@@ -77,9 +83,7 @@ W.ui.bindToast = function () {
   };
 };
 
-W.ui.soundOn = function () {
-  return W.lsGet(W.LS_SOUND_KEY, '1') !== '0';
-};
+W.ui.soundOn = function () { return false; };
 
 W.ui.feedback = function (ok) {
   if (!W.ui.soundOn()) return;
@@ -264,9 +268,9 @@ W.ui.bindHome = function () {
   var remaining = 0;
 
   function delaySec() {
-    var n = delay ? parseInt(delay.value, 10) : 3;
-    if (isNaN(n) || n < 0) n = 0;
-    if (n > 10) n = 10;
+    var n = delay ? parseFloat(delay.value) : 3;
+    if (isNaN(n)) n = 3;
+    n = Math.round(Math.min(5, Math.max(0.5, n)) * 2) / 2;
     return n;
   }
   function retryN() {
@@ -283,8 +287,8 @@ W.ui.bindHome = function () {
   /* Auto-start ON by default (first visit). */
   var savedAuto = W.lsGet(W.LS_AUTO_KEY, '1');
   if (auto) auto.checked = savedAuto !== '0';
-  if (delay) delay.value = String(Math.min(10, Math.max(0, parseInt(W.lsGet(W.LS_DELAY_KEY, '3'), 10) || 3)));
-  if (retry) retry.value = String(Math.min(3, Math.max(0, parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10) || 1)));
+  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delay.value = String(Math.round(Math.min(5, Math.max(0.5, dv)) * 2) / 2); }
+  if (retry) { var rv = parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10); if (isNaN(rv)) rv = 1; retry.value = String(Math.min(3, Math.max(0, rv))); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
 
@@ -293,6 +297,7 @@ W.ui.bindHome = function () {
     W.state.runStage = 'idle';
     if (go && !W.state.chainStarted) {
       go.disabled = false;
+      go.classList.remove('is-cancel');
       go.textContent = W.t('startJailbreak');
     }
     if (cancel) cancel.hidden = true;
@@ -302,7 +307,7 @@ W.ui.bindHome = function () {
   function beginJailbreak() {
     if (W.state.chainStarted) return;
     cancelCountdown();
-    if (go) { go.disabled = true; go.textContent = W.t('starting'); }
+    if (go) { go.disabled = true; go.classList.remove('is-cancel'); go.textContent = W.t('starting'); }
     W.state.safeRetryLeft = retryN();
     W.state.launcherChoice = W.CHOICE_ELF_LAUNCHER;
     W.lsSet(W.LS_LAUNCHER_KEY, W.CHOICE_ELF_LAUNCHER);
@@ -316,20 +321,21 @@ W.ui.bindHome = function () {
     remaining = delaySec();
     W.state.runStage = 'countdown';
     if (remaining <= 0) { beginJailbreak(); return; }
-    go.disabled = true;
-    go.textContent = W.t('startingIn', { n: remaining });
-    if (cancel) cancel.hidden = false;
-    if (W.els.countdownHint) W.els.countdownHint.textContent = W.t('countdownHint');
+    go.disabled = false;
+    go.classList.add('is-cancel');
+    go.textContent = W.t('cancel') + ' · ' + remaining;
+    if (cancel) cancel.hidden = true;
+    if (W.els.countdownHint) W.els.countdownHint.textContent = '';
     autoTimer = setInterval(function () {
-      remaining -= 1;
+      remaining -= 0.5;
       if (remaining <= 0) {
         clearInterval(autoTimer); autoTimer = 0;
         if (cancel) cancel.hidden = true;
         beginJailbreak();
         return;
       }
-      go.textContent = W.t('startingIn', { n: remaining });
-    }, 1000);
+      go.textContent = W.t('cancel') + ' · ' + remaining;
+    }, 500);
   }
 
   var chainBtns = document.querySelectorAll('#chainRow .opt');
@@ -359,7 +365,9 @@ W.ui.bindHome = function () {
   if (cancel) cancel.addEventListener('click', cancelCountdown);
   if (go) go.addEventListener('click', function () {
     if (W.state.chainStarted) return;
-    beginJailbreak();
+    /* Same button: Start -> Cancel during countdown -> Start. */
+    if (autoTimer) { cancelCountdown(); return; }
+    startCountdown();
   });
   if (openOnly) openOnly.addEventListener('click', function () {
     if (W.launcher && W.launcher.openNow) W.launcher.openNow();

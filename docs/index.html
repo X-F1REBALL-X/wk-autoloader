@@ -22,7 +22,6 @@
       </div>
       <div class="spacer"></div>
       <span class="chip" id="detectChip" data-i18n="detecting">Detecting…</span>
-      <button type="button" id="settingsBtn" class="barbtn" data-i18n="settings" aria-expanded="false">Settings</button>
       <div id="langbox">
         <button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button>
         <div id="langlist" role="menu" data-state="closed"></div>
@@ -38,7 +37,6 @@
 
           <div class="startrow">
             <button type="button" id="startJailbreak" class="go" data-i18n="startJailbreak">Start</button>
-            <button type="button" id="cancelAutoStart" class="cancel" data-i18n="cancel" hidden>Cancel</button>
           </div>
           <button type="button" id="openLauncherOnly" class="ghost" data-i18n="openLauncherOnly" hidden>Open Elf Launcher</button>
           <p class="hint" id="countdownHint"></p>
@@ -46,7 +44,7 @@
           <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
         </section>
 
-        <section class="settings card" id="settingsPanel" hidden>
+        <section class="settings card" id="settingsPanel">
           <p class="label" data-i18n="settings">Settings</p>
 
           <p class="label slim" data-i18n="chainTitle">Chain</p>
@@ -60,9 +58,8 @@
 
           <p class="label slim" data-i18n="timingTitle">Timing</p>
           <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start</span></label>
-          <label class="field" for="startDelay"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0" max="10" step="1" value="3" /><b id="startDelayVal">3s</b></label>
+          <label class="field" for="startDelay"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0.5" max="5" step="0.5" value="3" /><b id="startDelayVal">3s</b></label>
           <label class="field" for="retryCount"><span data-i18n="retryCount">Retries</span><input type="range" id="retryCount" min="0" max="3" step="1" value="1" /><b id="retryCountVal">1</b></label>
-          <label class="toggle" for="soundToggle"><input type="checkbox" id="soundToggle" checked /><span data-i18n="soundFeedback">Sound & vibration</span></label>
 
           <p class="label slim" data-i18n="theme">Theme</p>
           <div id="themebox" class="theme-row">
@@ -90,7 +87,7 @@
         <div id="progressContainer" hidden><div id="progressBar"></div></div>
         <p id="elapsedMsg">Elapsed 0:00</p>
         <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Done</span></div>
-        <div id="failMsg" data-i18n="jailbreakFail">Failed — restart the console</div>
+        <div id="failMsg" data-i18n="jailbreakFail">Failed. Restart the console</div>
         <div id="stallMsg" class="stall" hidden></div>
         <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
         <div id="nextTile" class="next" hidden>

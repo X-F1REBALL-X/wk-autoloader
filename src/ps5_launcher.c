@@ -21,7 +21,7 @@ typedef struct {
 int ps5_launch_browser(const char *uri) {
   wkali_log("[WKALI] Launching browser: %s\n", uri);
   if (sceSystemServiceLaunchWebBrowser(uri) != 0) {
-    wkali_notify("WKALI: Failed to launch browser.");
+    wkali_notify("Could not open browser");
     return -1;
   }
   return 0;

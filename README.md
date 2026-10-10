@@ -1,4 +1,4 @@
-# WK Autoloader
+<img src="docs/img/banner.png" alt="WK Autoloader">
 
 ![WK Autoloader](docs/guide/img/home.png)
 

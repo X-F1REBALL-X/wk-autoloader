@@ -15,3 +15,5 @@ Everything else, including what's new in 1.1.0, is in the [guide](https://x-f1re
 Developed by [X-F1REBALL-X](https://github.com/X-F1REBALL-X).
 
 Credits: umtx2 (idlesauce, shahrilnet, n0llptr, SpecterDev, ChendoChap, abc, john-tornblom); Relapse (ntfargo, ufm42, Sonic_Iso, Jordy, Dr. Yenyen, TheFlow, SlidyBat, Flatz, cow, nhk, bollarz, Sleirsgoevy, EchoStretch, EarthOnion).
+
+[Support the project on Ko-fi](https://ko-fi.com/xf1reballx). The project stays free and open source.

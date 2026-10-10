@@ -10,7 +10,7 @@ Home screen jailbreak host for a jailbroken PS5. Runs the exploit chain, then op
 2. Send `installer.elf` from the [latest release](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest). Wait for the home icon.
 3. Open the home tile, or `http://<PS5 IP>:1022` from your phone or PC.
 
-Everything else, including what's new in 1.0.17, is in the [guide](https://x-f1reball-x.github.io/wk-autoloader/guide/).
+Everything else, including what's new in 1.1.0, is in the [guide](https://x-f1reball-x.github.io/wk-autoloader/guide/).
 
 Developed by [X-F1REBALL-X](https://github.com/X-F1REBALL-X).
 

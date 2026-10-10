@@ -63,7 +63,7 @@ PLDMGR_LOCAL_CANDIDATES=(
 # NEVER pin an old SHA that rejects a newer local (that would downgrade the
 # console when Hybrid-down sends). Fall back to latest GitHub release asset.
 ELFLAUNCHER_REPO="X-F1REBALL-X/elf-launcher"
-ELFLAUNCHER_TAG=""
+ELFLAUNCHER_TAG="${ELFLAUNCHER_TAG:-}"
 ELFLAUNCHER_DEST="$ROOT/frontend/autoloader/payloads/elf-launcher.elf"
 ELFLAUNCHER_LOCAL_CANDIDATES=(
     "/workspace/elf-launcher/launcher/elf-launcher.elf"

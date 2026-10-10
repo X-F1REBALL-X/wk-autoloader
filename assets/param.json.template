@@ -1,10 +1,44 @@
 {
     "titleId": "SLKT00001",
-    "applicationCategoryType": 65536,
+    "applicationCategoryType": 0,
+    "contentBadgeType": 1,
     "deeplinkUri": "http://127.0.0.1:1022/app/index.html",
     "localizedParameters": {
         "defaultLanguage": "en-US",
         "en-US": {
+            "titleName": "WK Autoloader"
+        },
+        "en-GB": {
+            "titleName": "WK Autoloader"
+        },
+        "es-ES": {
+            "titleName": "WK Autoloader"
+        },
+        "fr-FR": {
+            "titleName": "WK Autoloader"
+        },
+        "de-DE": {
+            "titleName": "WK Autoloader"
+        },
+        "pt-BR": {
+            "titleName": "WK Autoloader"
+        },
+        "ru-RU": {
+            "titleName": "WK Autoloader"
+        },
+        "ja-JP": {
+            "titleName": "WK Autoloader"
+        },
+        "zh-Hans": {
+            "titleName": "WK Autoloader"
+        },
+        "it-IT": {
+            "titleName": "WK Autoloader"
+        },
+        "ar-AE": {
+            "titleName": "WK Autoloader"
+        },
+        "he-IL": {
             "titleName": "WK Autoloader"
         }
     }

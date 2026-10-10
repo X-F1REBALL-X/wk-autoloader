@@ -1,6 +1,6 @@
 #!/bin/bash
-# WebKit Autoloader Installer - Versioned Release Build Script
-# Release tree marker: v1.0.16
+# WK Autoloader Installer - Versioned Release Build Script
+# Release tree marker: v1.1.0
 
 # 1. Compute full version (stable = base, dev = base + build type + git hash/timestamp)
 VERSION=$(python3 tools/gen_version.py --print)
@@ -14,7 +14,7 @@ OUTPUT_ELF="wk-dual-payload_v${VERSION}.elf"
 HOST_PY="webkit-autoloader-host_v${VERSION}.py"
 IMAGE_NAME="ps5-webkit-autoloader-sdk"
 
-echo "--- Building WebKit Autoloader Installer v$VERSION ---"
+echo "--- Building WK Autoloader Installer v$VERSION ---"
 
 # 2. Remove old versioned artifacts
 rm -f wk-dual-payload_v*.elf webkit-autoloader-installer_v*.elf webkit-autoloader-host_v*.py

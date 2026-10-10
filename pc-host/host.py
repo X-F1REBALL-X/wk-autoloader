@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PC Host for the PS5 WebKit Autoloader.
+"""PC Host for the PS5 WK Autoloader.
 
 A zero-dependency DNS + HTTP server that:
   - Spoofs ``manuals.playstation.net`` (or any --target) to this PC's IP.
@@ -362,7 +362,7 @@ def build_response(qid, question_bytes, ip=None):
 
 class GuideStatus:
     """One-shot status milestones: prints a message when the PS5 first
-    contacts the server, and another when the WebKit Autoloader Installer
+    contacts the server, and another when the WK Autoloader Installer
     has been served (a /document/ request)."""
 
     def __init__(self, logger=print):
@@ -380,7 +380,7 @@ class GuideStatus:
             tag("\n[+] PS5 connection detected.\n"
                 "    Now open the User's Guide on your PS5\n"
                 "    (Settings -> User's Guide) to install the\n"
-                "    WebKit Autoloader.\n")
+                "    WK Autoloader.\n")
         )
 
     def on_document_served(self):
@@ -390,7 +390,7 @@ class GuideStatus:
             self.served = True
         self.logger(
             tag("\n[+] Installer served.\n"
-                "    If the exploit succeeded and the WebKit Autoloader has been\n"
+                "    If the exploit succeeded and the WK Autoloader has been\n"
                 "    installed, you can now close this host and change\n"
                 "    your PS5 DNS back - otherwise your PS5 won't be able to\n"
                 "    access the Internet.\n")
@@ -566,7 +566,7 @@ def resolve_dir(path):
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="host.py",
-        description="DNS spoofer + dual-directory HTTP server for the PS5 WebKit Autoloader.",
+        description="DNS spoofer + dual-directory HTTP server for the PS5 WK Autoloader.",
         epilog="Examples:\n"
         "  python3 host.py\n"
         "  python3 host.py --target manuals.playstation.net --base ../frontend/autoloader\n"

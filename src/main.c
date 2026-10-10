@@ -192,7 +192,7 @@ int main(void) {
 
     if (NULL == daemon) {
         wkali_log("[WKALI] Failed to start HTTP daemon!\n");
-        wkali_notify("WK Autoloader Installer: Error\nHTTP server failed to start");
+        wkali_notify("Server failed");
         return 1;
     }
 
@@ -206,8 +206,8 @@ int main(void) {
         snprintf(uid_param, sizeof(uid_param), "&uid=%08x", (unsigned int)uid);
     }
 
-    /* Companion homescreen pages (Elf Launcher + Payload Manager): install
-     * each only when missing. Never autoload unrelated payloads here. */
+    /* Companion homescreen page (Elf Launcher): install when missing.
+     * Never autoload unrelated payloads here. */
     wkali_install_companions();
 
     /* Always open the versioned browser URL and keep the server loop, even when
@@ -228,7 +228,7 @@ int main(void) {
     while (atomic_load(&http_keep_running)) {
         if (!install_notified && atomic_load(&install_completed)) {
             install_notified = 1;
-            wkali_notify("WK Autoloader cached successfully!");
+            /* Toast already sent from wkali_install_app (Elf Launcher style). */
             wkali_log("[WKALI] Install complete — server stays on :%d for UI/home icon\n",
                       WKALI_PORT);
         }

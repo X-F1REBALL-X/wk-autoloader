@@ -1,5 +1,5 @@
 /*
- * PS5 Homescreen App Installer for the WebKit Autoloader Installer.
+ * PS5 Homescreen App Installer for the WK Autoloader Installer.
  * Based on the original implementation in ftpsrv by John Törnblom
  * and Payload Manager by X-F1REBALL-X.
  */
@@ -32,8 +32,6 @@ INCASSET(param_json, "assets/param.json");
 INCASSET(icon0_png, "assets/icon0.png");
 INCASSET(elfl_param_json, "assets/companions/elf-launcher/param.json");
 INCASSET(elfl_icon0_png, "assets/companions/elf-launcher/icon0.png");
-INCASSET(pldm_param_json, "assets/companions/payload-manager/param.json");
-INCASSET(pldm_icon0_png, "assets/companions/payload-manager/icon0.png");
 
 int sceAppInstUtilInitialize(void);
 int sceAppInstUtilTerminate(void);
@@ -117,13 +115,13 @@ int wkali_install_app(void) {
   snprintf(icon_path, sizeof(icon_path), "/user/app/%s/sce_sys/icon0.png",
            title_id);
 
-  if (wkali_page_installed()) {
-    wkali_log("[WKALI] Page already present (%s). Reinstalling/updating...\n",
-              title_id);
-    wkali_notify("Updating WK Autoloader...");
-  } else {
+  int first_install = !wkali_page_installed();
+  if (first_install) {
     wkali_log("[WKALI] Installing browser launcher app (%s)...\n", title_id);
-    wkali_notify("Installing WK Autoloader...");
+    wkali_notify("Installing…");
+  } else {
+    wkali_log("[WKALI] Page already present (%s). Updating quietly…\n",
+              title_id);
   }
 
   int err;
@@ -160,7 +158,10 @@ int wkali_install_app(void) {
   }
 
   wkali_log("[WKALI] Launcher app installed successfully.\n");
-  wkali_notify("WK Autoloader Ready!");
+  if (first_install)
+    wkali_notify("Home icon installed");
+  else
+    wkali_notify("WK Autoloader updated");
 
   sceAppInstUtilTerminate();
   return 0;
@@ -190,7 +191,7 @@ static int install_title_if_missing(const char *title_id, const char *label,
   }
 
   wkali_log("[WKALI] Installing %s (%s)...\n", label, title_id);
-  wkali_notify("Installing %s...", label);
+  wkali_notify("Installing…");
 
   if ((err = sceAppInstUtilInitialize())) {
     wkali_log("[WKALI] sceAppInstUtilInitialize: error 0x%08X\n", err);
@@ -229,7 +230,7 @@ static int install_title_if_missing(const char *title_id, const char *label,
   }
 
   wkali_log("[WKALI] %s installed successfully.\n", label);
-  wkali_notify("%s Ready!", label);
+  wkali_notify("Home icon installed");
   sceAppInstUtilTerminate();
   return 0;
 }
@@ -237,14 +238,10 @@ static int install_title_if_missing(const char *title_id, const char *label,
 int wkali_install_companions(void) {
   int rc = 0;
 
-  /* Only the two companion homescreen pages. Never autoload payloads. */
+  /* Elf Launcher homescreen page only. Never autoload payloads. */
   if (install_title_if_missing("ELFL00001", "Elf Launcher", elfl_param_json,
                                elfl_param_json_size, elfl_icon0_png,
                                elfl_icon0_png_size))
-    rc = -1;
-  if (install_title_if_missing("PLDM00001", "Payload Manager", pldm_param_json,
-                               pldm_param_json_size, pldm_icon0_png,
-                               pldm_icon0_png_size))
     rc = -1;
   return rc;
 }

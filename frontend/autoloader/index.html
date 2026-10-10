@@ -1,98 +1,121 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Release tree marker: v1.0.6 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <script>(function(){var v="";try{v=localStorage.getItem("wkal-theme")||""}catch(e){}if(!/^(gray|white|gold|black)$/.test(v))v="";if(v){document.documentElement.setAttribute("data-theme",v);if(v==="gold"||v==="black")document.documentElement.className+=" dark"}}())</script>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
-  <link rel="preload" href="ps5-hero.jpg" as="image" />
   <title>WK Autoloader</title>
 </head>
 <body>
-  <div id="bg" aria-hidden="true"></div>
+  <div id="toast" role="status" aria-live="polite"><s>!</s><span><b id="toastTitle"></b><small id="toastBody"></small></span><button type="button" id="toastx" aria-label="Dismiss">×</button></div>
   <div id="selfupd" role="status"><p id="selfupdtxt"></p><div class="acts"><button type="button" id="selfupddl" data-i18n="update">Update</button><button type="button" id="selfupdx" data-i18n="selfUpdateLater">Later</button></div></div>
 
-  <div id="splash" aria-hidden="false">
-    <div id="launcherChoice" role="group" aria-label="Post-jailbreak launcher">
-      <p class="splash-brand">WK Autoloader <span class="splash-ver">v[[VERSION_PLACEHOLDER]]</span></p>
-      <p class="support-title" data-i18n="supportTitle">Supported FW 1.00-5.50 / 7.00-13.60</p>
-      <p class="detect-title" id="detectMsg" data-i18n="detecting">Detecting console...</p>
-      <p class="choice-title" data-i18n="afterJb">After jailbreak, open</p>
-      <div class="choice-row">
-        <button type="button" class="choice-btn" id="choicePayloadManager" data-choice="payload-manager">
-          <img class="choice-icon" src="payload-manager-icon.jpg" width="56" height="56" alt="" />
-          <span class="choice-name" data-i18n="payloadManager">Payload Manager</span>
-          <span class="choice-desc" data-i18n="payloadManagerDesc">HTTP Manager on :8084</span>
-        </button>
-        <button type="button" class="choice-btn" id="choiceElfLauncher" data-choice="elf-launcher">
-          <img class="choice-icon" src="elf-launcher-icon.jpg" width="56" height="56" alt="" />
-          <span class="choice-name" data-i18n="elfLauncher">Elf Launcher</span>
-          <span class="choice-desc" data-i18n="elfLauncherDesc">Hybrid: open :1000 or send tip ELF</span>
-        </button>
+  <div class="wrap">
+    <header class="bar" id="topbar">
+      <div class="logo"><img src="logo.png" alt="" width="46" height="46" /></div>
+      <div class="brand">
+        <h1>WK <b>Autoloader</b></h1>
+        <div class="meta"><span class="ver" id="appVer">v[[VERSION_PLACEHOLDER]]</span></div>
       </div>
-      <label class="auto-jb-toggle" for="autoJailbreak">
-        <input type="checkbox" id="autoJailbreak" />
-        <span data-i18n="autoStartJb">Auto-start jailbreak</span>
-      </label>
-      <button type="button" id="startJailbreak" class="start-btn" data-i18n="startJailbreak">Start Jailbreak</button>
-      <button type="button" id="cancelAutoStart" class="cancel-auto-btn" data-i18n="cancel" hidden>Cancel</button>
-      <p class="choice-hint" data-i18n="choiceSaved">Choice is saved on this console</p>
-      <p class="pages-links"><a class="pages-link" href="https://x-f1reball-x.github.io/elf-launcher/" target="_blank" rel="noopener" data-i18n="elfLauncherPage">Elf Launcher page</a></p>
+      <div class="spacer"></div>
+      <span class="chip" id="detectChip" data-i18n="detecting">Detecting…</span>
       <div id="langbox">
-        <button type="button" id="langbtn" aria-haspopup="true">
-          <span class="flag" id="langflag"></span>
-          <span data-i18n="language">Language</span>
-        </button>
+        <button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button>
         <div id="langlist" role="menu" data-state="closed"></div>
       </div>
+    </header>
+
+    <div id="splash" aria-hidden="false">
+      <main class="main">
+        <section class="hero card" id="homeCard">
+          <img class="hero-ico" src="elf-launcher-icon.png" width="72" height="72" alt="" />
+          <h2 class="h" data-i18n="startJailbreakTitle">Start jailbreak</h2>
+          <p class="sub" data-i18n="homeSubShort">Then opens Elf Launcher</p>
+
+          <div class="startrow">
+            <button type="button" id="startJailbreak" class="go" data-i18n="startJailbreak">Start</button>
+          </div>
+          <button type="button" id="openLauncherOnly" class="ghost" data-i18n="openLauncherOnly" hidden>Open Elf Launcher</button>
+          <p class="hint" id="countdownHint"></p>
+          <p class="fwline" data-i18n="supportedFw">Supported firmware: 1.00–5.50, 7.00–13.60 · 6.xx not supported</p>
+          <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
+        </section>
+
+        <section class="settings card" id="settingsPanel">
+          <p class="label" data-i18n="settings">Settings</p>
+
+          <p class="label slim" data-i18n="chainTitle">Chain</p>
+          <div class="chips" id="chainRow" role="group" aria-label="Exploit chain">
+            <button type="button" class="opt" id="chainAuto" data-chain="auto"><span class="t" data-i18n="chainAuto">Auto</span><span class="tag" data-i18n="recommended">Best</span></button>
+            <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2"><span class="t">umtx2</span><span class="d">FW 1.00–5.50</span></button>
+            <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span><span class="d">FW 7.00–13.60</span></button>
+            <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span><span class="d">FW 7.00–12.00</span></button>
+          </div>
+          <p class="hint" id="chainHint"></p>
+
+          <p class="label slim" data-i18n="timingTitle">Timing</p>
+          <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start</span></label>
+          <label class="field" for="startDelay"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0.5" max="5" step="0.5" value="3" /><b id="startDelayVal">3s</b></label>
+          <label class="field" for="retryCount"><span data-i18n="retryCount">Retries</span><input type="range" id="retryCount" min="0" max="3" step="1" value="1" /><b id="retryCountVal">1</b></label>
+
+          <p class="label slim" data-i18n="theme">Theme</p>
+          <div id="themebox" class="theme-row">
+            <button type="button" class="themeopt" data-theme="" data-i18n="themeLight">Light</button>
+            <button type="button" class="themeopt" data-theme="gold" data-i18n="themeGold">Gold</button>
+            <button type="button" class="themeopt" data-theme="black" data-i18n="themeBlack">Black</button>
+            <button type="button" class="themeopt" data-theme="gray" data-i18n="themeGray">Gray</button>
+            <button type="button" class="themeopt" data-theme="white" data-i18n="themeWhite">White</button>
+          </div>
+
+          <p class="label slim" data-i18n="historyTitle">Recent</p>
+          <div id="historyList" class="history"></div>
+          <p class="hint" id="historyEmpty" data-i18n="historyEmpty">No runs yet</p>
+        </section>
+      </main>
     </div>
+
+    <main id="loader" hidden>
+      <section class="hero card center">
+        <img class="run-ico" src="logo.png" width="80" height="80" alt="" />
+        <p class="title" id="titleMsg">WK Autoloader</p>
+        <p class="meta2" id="metaMsg">FW - · chain -</p>
+        <div class="ring" id="progressRing"><div id="progressPct">0%</div></div>
+        <p class="status" id="statusMsg" data-i18n="jailbreakStarted">Jailbreak started</p>
+        <div id="progressContainer" hidden><div id="progressBar"></div></div>
+        <p id="elapsedMsg">Elapsed 0:00</p>
+        <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Done</span></div>
+        <div id="failMsg" data-i18n="jailbreakFail">Failed. Restart the console</div>
+        <div id="stallMsg" class="stall" hidden></div>
+        <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
+        <div id="nextTile" class="next" hidden>
+          <img src="elf-launcher-icon.png" width="56" height="56" alt="" />
+          <div><p class="n" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d">http://127.0.0.1:1000</p></div>
+        </div>
+        <div id="logWrapper" hidden><div id="logContainer"></div></div>
+        <div id="p2jbStats" hidden>
+          <div class="stats-head"><span class="stats-title">P2JB</span><span class="stats-chip" id="p2jbStepChip">STEP –/7</span><span class="stats-clock" id="p2jbClocks">total --:--:--</span></div>
+          <div class="stats-status" id="p2jbStatus">…</div>
+          <div class="stats-infoline"><div class="stats-detail" id="p2jbDetail" hidden></div><div id="p2jbGroups" hidden></div></div>
+          <div class="stats-bar-row"><div class="stats-bar-label"><span id="p2jbPhaseName">PHASE</span><span id="p2jbPhasePct">–</span></div><div class="stats-track"><div class="stats-fill" id="p2jbPhaseFill"></div></div><div class="stats-meta" id="p2jbPhaseMeta">ETA --:--:--</div></div>
+          <div class="stats-bar-row overall"><div class="stats-bar-label"><span>OVERALL</span><span id="p2jbOverallPct">–</span></div><div class="stats-track big"><div class="stats-fill" id="p2jbOverallFill"></div></div><div class="stats-meta" id="p2jbOverallMeta">– left</div></div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="footer"><b>Developed by <a href="https://github.com/X-F1REBALL-X" target="_blank" rel="noopener">X-F1REBALL-X</a></b></footer>
   </div>
 
   <iframe id="exploit" title="exploit" hidden></iframe>
-
-  <main id="loader" hidden>
-    <img id="appLogo" src="logo.png" alt="" width="72" height="72" />
-    <p id="titleMsg">WK Autoloader <span id="appVer">v[[VERSION_PLACEHOLDER]]</span></p>
-    <p id="metaMsg">FW - · chain -</p>
-    <p id="statusMsg" data-i18n="jailbreakStarted">Jailbreak started</p>
-    <div id="progressContainer">
-      <div id="progressBar"></div>
-    </div>
-    <div id="progressPct">0%</div>
-    <p id="elapsedMsg">Elapsed 0:00</p>
-    <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Jailbreak completed successfully</span></div>
-    <div id="failMsg" data-i18n="jailbreakFail">Jailbreak failed - restart your console</div>
-    <div id="progressLabel" hidden data-i18n="jailbreakInProgress">Jailbreak in progress</div>
-    <div id="logWrapper" hidden>
-      <div id="logContainer"></div>
-    </div>
-    <div id="p2jbStats" hidden>
-      <div class="stats-head">
-        <span class="stats-title">P2JB</span>
-        <span class="stats-chip" id="p2jbStepChip">STEP &ndash;/7</span>
-        <span class="stats-clock" id="p2jbClocks">total --:--:--</span>
-      </div>
-      <div class="stats-status" id="p2jbStatus">&#8230;</div>
-      <div class="stats-infoline">
-        <div class="stats-detail" id="p2jbDetail" hidden></div>
-        <div id="p2jbGroups" hidden></div>
-      </div>
-      <div class="stats-bar-row">
-        <div class="stats-bar-label"><span id="p2jbPhaseName">PHASE</span><span id="p2jbPhasePct">&ndash;</span></div>
-        <div class="stats-track"><div class="stats-fill" id="p2jbPhaseFill"></div></div>
-        <div class="stats-meta" id="p2jbPhaseMeta">ETA --:--:--</div>
-      </div>
-      <div class="stats-bar-row overall">
-        <div class="stats-bar-label"><span>OVERALL</span><span id="p2jbOverallPct">&ndash;</span></div>
-        <div class="stats-track big"><div class="stats-fill" id="p2jbOverallFill"></div></div>
-        <div class="stats-meta" id="p2jbOverallMeta">&ndash; left</div>
-      </div>
-    </div>
-  </main>
-
-  <footer id="footer"><b>Developed by <a href="https://github.com/X-F1REBALL-X" target="_blank" rel="noopener">X-F1REBALL-X</a></b></footer>
   <script src="i18n.js"></script>
-  <script src="app.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/chains.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/launcher.js"></script>
+  <script src="js/mirrors.js"></script>
+  <script src="js/selfupdate.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

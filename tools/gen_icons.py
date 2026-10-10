@@ -141,16 +141,17 @@ def main():
     with open(MASTER, "r") as f:
         master_src = f.read()
 
-    wrapper = build_wrapper_svg(master_src)
-    render = find_renderer()
+    custom_im = maybe_load_custom_icon0()
+    wrapper = build_wrapper_svg(master_src) if custom_im is None else None
+    render = None if custom_im is not None else find_renderer()
 
     with tempfile.TemporaryDirectory(prefix="wkal-icon-") as tmp:
         wrapper_path = os.path.join(tmp, "icon-bg.svg")
-        with open(wrapper_path, "w") as f:
-            f.write(wrapper)
+        if wrapper is not None:
+            with open(wrapper_path, "w") as f:
+                f.write(wrapper)
 
         # PS5 homescreen icon (512x512) and Windows .exe icon (16-256px)
-        custom_im = maybe_load_custom_icon0()
         if custom_im is not None:
             custom_im.save(ICON0, "PNG", optimize=True)
             pngs = []
@@ -170,10 +171,11 @@ def main():
                 f.write(build_ico(pngs))
 
         # Favicon SVGs (same wrapper, no rasterization needed)
+        fav_src = wrapper if wrapper is not None else master_src
         for path in (FAVICON_INSTALLER, FAVICON_AUTOLOADER):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w") as f:
-                f.write(wrapper)
+                f.write(fav_src)
 
         # In-page logo SVGs (raw master art, no wrapper background)
         for path in (LOGO_INSTALLER, LOGO_AUTOLOADER):

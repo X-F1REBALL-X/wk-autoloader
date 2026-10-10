@@ -1,35 +1,36 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- solid white pad behind the circular badge -->
-    <linearGradient id="wkalBg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#ffffff"/>
-    </linearGradient>
-<radialGradient id="bg" cx="42%" cy="32%" r="78%">
-      <stop offset="0%" stop-color="#1a5a9a"/>
-      <stop offset="55%" stop-color="#0e3a6e"/>
-      <stop offset="100%" stop-color="#0a2a52"/>
+    <radialGradient id="bg" cx="30%" cy="22%" r="95%">
+      <stop offset="0" stop-color="#262c52"/>
+      <stop offset=".55" stop-color="#121624"/>
+      <stop offset="1" stop-color="#0b0d14"/>
     </radialGradient>
-    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9ad2ff"/>
-      <stop offset="45%" stop-color="#2a9fff"/>
-      <stop offset="100%" stop-color="#1a7fd9"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset=".55" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
-    <linearGradient id="letters" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#cfe9ff"/>
+    <linearGradient id="chip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2540"/>
+      <stop offset="1" stop-color="#151a2e"/>
     </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
   </defs>
-  <rect width="1024" height="1024" fill="url(#wkalBg)"/>
-  <g transform="translate(100.826 100.826) scale(0.803074)">
-<circle cx="512" cy="512" r="500" fill="url(#bg)"/>
-  <circle cx="512" cy="512" r="438" fill="none" stroke="url(#ring)" stroke-width="34"/>
-  <circle cx="512" cy="512" r="380" fill="none" stroke="#2a9fff" stroke-opacity="0.28" stroke-width="8"/>
-  <!-- WK scaled to sit fully inside the ring -->
-  <g transform="translate(512 512) scale(0.72) translate(-512 -512)" fill="url(#letters)">
-    <path d="M188 320h92l62 268 70-268h88l70 268 62-268h92L612 704H508l-66-252-66 252H272L188 320z"/>
-    <path d="M640 320h96v152l118-152h112L794 512l178 192H858L736 552v152h-96V320z"/>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="226" r="130" fill="#fbbf24" opacity=".22" filter="url(#glow)"/>
+  <!-- shackle open -->
+  <g fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round">
+    <path d="M198 188 C198 148 314 148 314 188"/>
+    <path d="M198 188 v28"/>
+    <path d="M314 168 v20"/>
   </g>
-  </g>
+  <!-- lock body -->
+  <rect x="170" y="210" width="172" height="130" rx="32" fill="url(#chip)" stroke="url(#g)" stroke-width="12"/>
+  <!-- keyhole -->
+  <circle cx="256" cy="258" r="16" fill="url(#g)"/>
+  <path d="M248 258 v40 h16 v-40" fill="url(#g)"/>
+  <text x="256" y="440" text-anchor="middle" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif" font-weight="800" font-size="74" letter-spacing="6" fill="#eef0ff">WK</text>
+  <text x="256" y="478" text-anchor="middle" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif" font-weight="700" font-size="22" letter-spacing="5.5" fill="url(#g)">AUTOLOADER</text>
 </svg>

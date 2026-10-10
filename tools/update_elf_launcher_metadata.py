@@ -6,7 +6,11 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SHA_FILE = ROOT / "frontend/autoloader/payloads/elf-launcher.elf.sha256"
-APP = ROOT / "frontend/autoloader/app.js"
+# Layout B modules live under js/; keep docs/ in sync when present.
+TARGETS = [
+    ROOT / "frontend/autoloader/js/core.js",
+    ROOT / "docs/js/core.js",
+]
 
 
 def read_metadata():
@@ -24,20 +28,35 @@ def read_metadata():
     return version, digest
 
 
-def main():
-    version, digest = read_metadata()
-    text = APP.read_text(encoding="utf-8")
+def patch(path: Path, version: str, digest: str) -> None:
+    text = path.read_text(encoding="utf-8")
     text, sha_count = re.subn(
-        r"(var BUNDLED_ELFLAUNCHER_SHA\s*=\s*)['\"][0-9a-fA-F]{64}(['\"]\s*;)",
-        rf"\g<1>'{digest}\g<2>", text, count=1,
+        r"(W\.BUNDLED_ELFLAUNCHER_SHA\s*=\s*)['\"][0-9a-fA-F]{64}(['\"]\s*;)",
+        rf"\g<1>'{digest}\g<2>",
+        text,
+        count=1,
     )
     text, ver_count = re.subn(
-        r"(var BUNDLED_ELFLAUNCHER_VER\s*=\s*)['\"][^'\"]*(['\"]\s*;)",
-        rf"\g<1>'{version}\g<2>", text, count=1,
+        r"(W\.BUNDLED_ELFLAUNCHER_VER\s*=\s*)['\"][^'\"]*(['\"]\s*;)",
+        rf"\g<1>'{version}\g<2>",
+        text,
+        count=1,
     )
     if sha_count != 1 or ver_count != 1:
-        raise RuntimeError("app.js launcher constants not found")
-    APP.write_text(text, encoding="utf-8")
+        raise RuntimeError(f"{path.name} launcher constants not found")
+    path.write_text(text, encoding="utf-8")
+
+
+def main():
+    version, digest = read_metadata()
+    wrote = 0
+    for path in TARGETS:
+        if not path.is_file():
+            continue
+        patch(path, version, digest)
+        wrote += 1
+    if not wrote:
+        raise RuntimeError("no js/core.js targets found for launcher constants")
     print(f"elf-launcher metadata: {version or '(unversioned)'} {digest}")
 
 

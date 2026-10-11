@@ -670,8 +670,21 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(18);
       else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(32);
       else if (/Worker/.test(textLine)) W.bumpProgressFloor(48);
-      else if (/kernel/.test(textLine)) W.bumpProgressFloor(70);
-      else if (/elfldr|listening on port 9021/.test(textLine)) {
+      else if (/ucred_addr/.test(textLine)) {
+        /* Quiet first so bumpProgressFloor can one-shot ease then re-pause. */
+        if (W.enterKernelQuiet) W.enterKernelQuiet();
+        W.bumpProgressFloor(66);
+      } else if (/kernel/i.test(textLine)) {
+        /* Enter kernel quiet before the floor bump so creep stops during kR/W. */
+        if (W.enterKernelQuiet) W.enterKernelQuiet();
+        if (/fast read and write ready/i.test(textLine)) W.bumpProgressFloor(74);
+        else if (/privileges ready/i.test(textLine)) W.bumpProgressFloor(82);
+        else W.bumpProgressFloor(70);
+      } else if (/\bPipes\b/i.test(textLine) && /ready|established|located/i.test(textLine)) {
+        if (W.enterKernelQuiet) W.enterKernelQuiet();
+        W.bumpProgressFloor(74);
+      } else if (/elfldr|listening on port 9021/.test(textLine)) {
+        if (W.leaveKernelQuiet) W.leaveKernelQuiet();
         W.bumpProgressFloor(88);
         W._maybeApply('relapse-elfldr');
       }

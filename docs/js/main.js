@@ -64,11 +64,28 @@ W.startChain = function (skipElfSend) {
     }, 480);
   }
 
-  W.state.mirrorTimer = setInterval(function () {
-    if (W.mirrors && W.mirrors.mirrorExploit) W.mirrors.mirrorExploit();
-    /* Mark armed once progress moves past early webkit stage. */
-    if (W.state.progressPct >= 32 && W.state.runStage === 'early') W.state.runStage = 'armed';
-  }, picked === 'p2jb' ? 1000 : 500);
+  var mirrorMs = picked === 'p2jb' ? 1000 : 500;
+  function armMirrorTimer(ms) {
+    if (W.state.mirrorTimer) {
+      clearInterval(W.state.mirrorTimer);
+      W.state.mirrorTimer = 0;
+    }
+    W.state.mirrorTimer = setInterval(function () {
+      if (W.mirrors && W.mirrors.mirrorExploit) W.mirrors.mirrorExploit();
+      /* Mark armed once progress moves past early webkit stage. */
+      if (W.state.progressPct >= 32 && W.state.runStage === 'early') {
+        W.state.runStage = 'armed';
+        /* Relapse: once armed, pause fake progress creep (host-only). */
+        if (picked === 'relapse' && W.enterKernelQuiet) W.enterKernelQuiet();
+      }
+      /* Optionally slow mirror polling during Relapse kernel quiet (500ms -> 1500ms). */
+      if (picked === 'relapse' && W.state.progressKernelQuiet && mirrorMs < 1500) {
+        mirrorMs = 1500;
+        armMirrorTimer(mirrorMs);
+      }
+    }, ms);
+  }
+  armMirrorTimer(mirrorMs);
 
   try {
     if (picked === 'umtx2') {

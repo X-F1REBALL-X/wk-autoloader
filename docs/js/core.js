@@ -43,6 +43,8 @@ W.state = {
   selfUpdateMsgTimer: 0,
   stallTimer: 0,
   lastProgressAt: 0,
+  progressPaused: false, /* true during Relapse kernel: no 50ms creep / ring thrash */
+  progressKernelQuiet: false,
   runStage: 'idle', /* idle|countdown|early|armed|done|fail */
   safeRetryLeft: 0,
   historyPrefer: null
@@ -201,10 +203,53 @@ W.updateProgress = function (percent, message) {
 
 W.bumpProgressFloor = function (floor) {
   if (W.state.progressDone) return;
-  if (floor > W.state.progressPct) W.updateProgress(floor);
+  if (floor > W.state.progressPct) {
+    /* Real floor from mirror: apply once. If we were in kernel quiet, leave quiet
+       so the bar can ease to the new floor, then re-enter quiet (no creep thrash). */
+    var wasQuiet = W.state.progressKernelQuiet;
+    if (wasQuiet) {
+      W.state.progressKernelQuiet = false;
+      W.state.progressPaused = false;
+    }
+    W.updateProgress(floor);
+    if (wasQuiet) {
+      /* One-shot ease toward the new floor, then pause again. */
+      W.startProgressDriver();
+      setTimeout(function () {
+        if (!W.state.progressDone && W.state.exploitMode === 'relapse') W.enterKernelQuiet();
+      }, 400);
+    }
+  }
+};
+
+W.pauseProgressDriver = function () {
+  W.state.progressPaused = true;
+  if (W.state.progressTimer) {
+    clearInterval(W.state.progressTimer);
+    W.state.progressTimer = 0;
+  }
+};
+
+W.resumeProgressDriver = function () {
+  W.state.progressPaused = false;
+  W.startProgressDriver();
+};
+
+W.enterKernelQuiet = function () {
+  /* Relapse kernel stage: stop 50ms creep + conic-gradient thrash on #progressRing. */
+  if (W.state.progressKernelQuiet) return;
+  W.state.progressKernelQuiet = true;
+  W.pauseProgressDriver();
+};
+
+W.leaveKernelQuiet = function () {
+  if (!W.state.progressKernelQuiet) return;
+  W.state.progressKernelQuiet = false;
+  if (!W.state.progressDone) W.resumeProgressDriver();
 };
 
 W.startProgressDriver = function () {
+  if (W.state.progressPaused || W.state.progressKernelQuiet) return;
   if (W.state.progressTimer) return;
   W.state.progressTimer = setInterval(function () {
     if (W.state.progressDone) {
@@ -212,12 +257,17 @@ W.startProgressDriver = function () {
       W.state.progressTimer = 0;
       return;
     }
-    /* Creep the target, then ease the visible bar/ring toward it so it never sits still. */
+    if (W.state.progressPaused || W.state.progressKernelQuiet) {
+      clearInterval(W.state.progressTimer);
+      W.state.progressTimer = 0;
+      return;
+    }
+    /* Creep the target, then ease the visible bar/ring toward it so it never sits still.
+       Fake creep must NOT call touchProgress - only real updateProgress/mirror bumps do. */
     if (W.state.progressPct < 94) {
       var next = W.state.progressPct + Math.max(0.4, (94 - W.state.progressPct) * 0.045);
       if (next > 94) next = 94;
       W.state.progressPct = next;
-      W.touchProgress();
     }
     var disp = W.state.progressDisplay || 0;
     var tgt = W.state.progressPct;
@@ -263,6 +313,8 @@ W.setMeta = function (fwStr, chain) {
 W.finishProgressSuccess = function (message) {
   W.state.progressDone = true;
   W.state.runStage = 'done';
+  W.state.progressKernelQuiet = false;
+  W.state.progressPaused = false;
   W.stopElapsed();
   if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
   if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
@@ -289,6 +341,8 @@ W.finishProgressSuccess = function (message) {
 W.finishProgressFail = function (message) {
   W.state.progressDone = true;
   W.state.runStage = 'fail';
+  W.state.progressKernelQuiet = false;
+  W.state.progressPaused = false;
   W.stopElapsed();
   if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
   if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }

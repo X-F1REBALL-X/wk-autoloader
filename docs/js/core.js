@@ -28,6 +28,8 @@ W.state = {
   elapsedStart: 0,
   launcherHttpOpenStarted: false,
   elfHttpAlreadyUp: false,
+  elMirrorFirst: false,  /* boot sends console mirror EL, bundled only as fallback */
+  elRefreshRan: false,
   launcherChoice: 'elf-launcher',
   exploitMode: null,
   EXPLOIT_URL: '',

@@ -16,6 +16,13 @@ W.launcher.httpResponseReady = function (xhr, label) {
 };
 
 W.launcher.navigateLocalHttp = function (url, label, portHint) {
+  /* Leave only after the background mirror refresh answered (bounded), so
+     Elf Launcher never writes its /update reply to a page that is gone. */
+  if (label === 'elf-launcher' && W.elauto && !W.state.elRefreshRan) {
+    W.state.elRefreshRan = true;
+    W.elauto.refresh(function () { W.launcher.navigateLocalHttp(url, label, portHint); });
+    return;
+  }
   var navUrl = (label === 'elf-launcher') ? url : W.withCacheBust(url);
   if (label === 'elf-launcher') {
     try {
@@ -41,7 +48,7 @@ W.launcher.revealLogPanel = function () {
 };
 
 W.launcher.requestResendAutoload = function (name) {
-  name = name || W.autoloadElfName();
+  name = name || (W.state.elMirrorFirst ? 'elf-launcher.elf' : W.autoloadElfName());
   W.uiLog('Re-send requested: ' + name + ' -> elfldr :9021', 'info');
   try {
     var w = W.els.exploit && W.els.exploit.contentWindow;
@@ -262,6 +269,8 @@ W.launcher.probeQuick = function (cb) {
 W.autoloadElfName = function () {
   /* Elf Launcher only: open-only when :1000 up; else tip ELF name for chain autoload. */
   if (W.state.elfHttpAlreadyUp) return 'wkal-skip';
+  /* Console mirror goes first (sent after JB by openElfLauncherPage). */
+  if (W.state.elMirrorFirst) return 'wkal-skip';
   return 'elf-launcher.elf';
 };
 
@@ -307,9 +316,10 @@ W.launcher.openElfLauncherPage = function () {
     } catch (eTrig) {}
   }
 
-  function maybeNavigate(alreadyUp) {
+  function maybeNavigate(alreadyUp, freshMirror) {
     W.launcher.browserWantsOpen(function (wantOpen) {
       if (!wantOpen) {
+        if (W.elauto && !W.state.elRefreshRan) { W.state.elRefreshRan = true; W.elauto.refresh(); }
         W.uiLog('Elf Launcher :1000 ready, open-after-JB is Off (home tile / URL still work)', 'success');
         if (W.els.nextTile) {
           try {
@@ -323,7 +333,12 @@ W.launcher.openElfLauncherPage = function () {
         if (oo) oo.hidden = false;
         return;
       }
-      if (alreadyUp) {
+      if (freshMirror) {
+        /* Fresh start like the bundled path: Elf runs its own AutoPayload. */
+        W.uiLog('Console mirror Elf Launcher up - opening :1000 ...', 'success');
+        W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
+          25000, 400, 800, false);
+      } else if (alreadyUp) {
         W.uiLog('Elf Launcher :1000 already up - trigger Auto then open ...', 'success');
         triggerAuto();
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
@@ -340,18 +355,26 @@ W.launcher.openElfLauncherPage = function () {
     maybeNavigate(true);
     return;
   }
-  W.uiLog('Trying console mirror ' + W.CONSOLE_MIRROR_URI + ' ...', 'info');
-  W.launcher.sendUrlToElfldr(W.CONSOLE_MIRROR_URI, function () {
-    W.launcher.probeElfLauncherHttp(function (up) {
-      if (up) {
-        W.state.elfHttpAlreadyUp = true;
-        W.uiLog('Console mirror brought :1000 up', 'success');
-        maybeNavigate(true);
-        return;
-      }
-      W.uiLog('Mirror miss, tip / resend path for bundled elf-launcher.elf', 'info');
-      maybeNavigate(false);
-    });
+  if (!W.state.elMirrorFirst) {
+    /* Chain already sent the bundled ELF (no known console mirror yet). */
+    W.uiLog('Sent bundled Elf Launcher ' + W.BUNDLED_ELFLAUNCHER_VER + ' (no console mirror yet)', 'info');
+    maybeNavigate(false);
+    return;
+  }
+  W.uiLog('Launching console mirror ' + W.CONSOLE_MIRROR_URI + ' ...', 'info');
+  W.elauto.sendMirror();
+  W.elauto.waitUp(10000, function (up) {
+    if (up) {
+      W.state.elfHttpAlreadyUp = true;
+      W.uiLog('Elf Launcher from console mirror is up (' + W.elauto.mirrorLabel() + ')', 'success');
+      maybeNavigate(true, true);
+      return;
+    }
+    W.uiLog('Mirror miss, sending bundled Elf Launcher ' + W.BUNDLED_ELFLAUNCHER_VER, 'warning');
+    W.elauto.forgetMirror();
+    W.launcher.requestResendAutoload('elf-launcher.elf');
+    W.state.elMirrorFirst = false;
+    maybeNavigate(false);
   });
 };
 
@@ -378,7 +401,9 @@ W.launcher.onAutoloadResult = function (data) {
       try { W.els.failMsg.hidden = true; W.els.failMsg.textContent = ''; } catch (e0) {}
     }
     var name = W.autoloadElfName();
-    if (data.skipped || name === 'wkal-skip') {
+    if (W.state.elMirrorFirst && (data.skipped || name === 'wkal-skip')) {
+      W.uiLog('Chain skipped bundled ELF - console mirror goes next.', 'info');
+    } else if (data.skipped || name === 'wkal-skip') {
       W.uiLog('No post-JB ELF sent (wkal-skip).', 'info');
     } else if (!(Number(data.bytes) > 0)) {
       W.uiLog('Autoload ok but send missing/skipped (bytes=' + String(data.bytes) + ')', 'warning');
@@ -413,6 +438,162 @@ W.launcher.onAutoloadResult = function (data) {
       if (W.persistCfiFromLauncher) W.persistCfiFromLauncher(function () {});
     }, 3500);
   }, 0);
+};
+
+
+/* ---- Elf Launcher auto-latest: no WK rebuild per Elf Launcher release ----
+   Boot (Relapse/Poops/p2jb elfldr reads local paths over HTTP GET):
+     console mirror /data/elf-launcher/mirror/elf-launcher.elf first,
+     bundled payloads/elf-launcher.elf only when no mirror is known or it misses.
+   After :1000 is up: compare the mirror sha (Elf /file_meta) with the GitHub
+   latest release digest; if different, Elf Launcher downloads it natively and
+   sha256-verifies it into the mirror (/update). Used from the next boot.
+   umtx2 (FW <= 5.50) keeps the old bundled path: its elfldr has no HTTP GET. */
+W.EL_GH_LATEST = 'https://api.github.com/repos/X-F1REBALL-X/elf-launcher/releases/latest';
+W.EL_MIRROR_GET = 'http://127.0.0.1:9021/data/elf-launcher/mirror/elf-launcher.elf';
+W.LS_EL_MIRROR = 'wkal_el_mirror';  /* {sha,size,tag,at} mirror last seen by Elf */
+W.LS_EL_LATEST = 'wkal_el_latest';  /* {tag,sha,url,size,at} or {fail:1,at} */
+W.elauto = W.elauto || {};
+
+function elJson(k) {
+  try { var v = JSON.parse(W.lsGet(k, '') || 'null'); return (v && typeof v === 'object') ? v : null; } catch (e) { return null; }
+}
+function elSave(k, o) { W.lsSet(k, o ? JSON.stringify(o) : ''); }
+function elSha(v) { v = String(v || '').toLowerCase().replace(/^sha256:/, ''); return /^[0-9a-f]{64}$/.test(v) ? v : ''; }
+
+function elXhrJson(url, timeoutMs, cb) {
+  var done = false;
+  function fin(err, j) { if (done) return; done = true; try { cb(err, j); } catch (e) {} }
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = timeoutMs;
+    xhr.onload = function () {
+      var j = null;
+      try { j = JSON.parse(xhr.responseText || 'null'); } catch (eP) {}
+      if (xhr.status >= 200 && xhr.status < 300 && j) fin(null, j);
+      else fin(new Error((j && j.message) || ('HTTP ' + xhr.status)), j);
+    };
+    xhr.onerror = function () { fin(new Error('network')); };
+    xhr.ontimeout = function () { fin(new Error('timeout')); };
+    xhr.send();
+  } catch (e) { fin(e); }
+  setTimeout(function () { fin(new Error('timeout')); }, timeoutMs + 500);
+}
+
+W.elauto.mirrorLabel = function () {
+  var m = elJson(W.LS_EL_MIRROR);
+  if (!m) return 'unknown';
+  return (m.tag ? m.tag + ' ' : '') + (m.sha ? m.sha.substring(0, 12) : 'no sha');
+};
+
+/* Mirror first only when Elf saw a real file there and the chain's elfldr can load it. */
+W.elauto.mirrorFirstOk = function (chain) {
+  if (chain !== 'relapse' && chain !== 'poops' && chain !== 'p2jb') return false;
+  var m = elJson(W.LS_EL_MIRROR);
+  return !!(m && (m.size | 0) > 4096);
+};
+
+W.elauto.forgetMirror = function () { elSave(W.LS_EL_MIRROR, null); };
+
+/* One plain GET: elfldr maps the path to file:///data/... and spawns it.
+   Exactly one request (no Image+iframe retries), a second one would start a second Elf. */
+W.elauto.sendMirror = function () {
+  try {
+    var img = new Image();
+    img.src = W.EL_MIRROR_GET;
+    W.elauto._img = img;
+  } catch (e) {
+    W.uiLog('Mirror send failed: ' + (e && e.message ? e.message : e), 'warning');
+  }
+};
+
+W.elauto.waitUp = function (maxMs, cb) {
+  var until = Date.now() + maxMs;
+  (function tick() {
+    W.launcher.probeElfLauncherHttp(function (up) {
+      if (up) { cb(true); return; }
+      if (Date.now() >= until) { cb(false); return; }
+      setTimeout(tick, 500);
+    });
+  })();
+};
+
+/* Splash only (before the chain): remember GitHub latest. Never blocks anything. */
+W.elauto.prefetch = function (cb) {
+  var c = elJson(W.LS_EL_LATEST);
+  function fin(x) { if (typeof cb === 'function') try { cb(x); } catch (e) {} }
+  if (c && c.at && Date.now() - c.at < (c.fail ? 30 : 10) * 60000) { fin(c); return; }
+  elXhrJson(W.EL_GH_LATEST + '?_=' + Date.now(), 4000, function (err, j) {
+    var i, a, info = null;
+    if (!err && j && !j.draft && j.assets) {
+      for (i = 0; i < j.assets.length; i++) {
+        a = j.assets[i] || {};
+        if (String(a.name || '').toLowerCase() === 'elf-launcher.elf' && elSha(a.digest) && a.browser_download_url) {
+          info = { tag: String(j.tag_name || ''), sha: elSha(a.digest), url: a.browser_download_url, size: a.size | 0, at: Date.now() };
+          break;
+        }
+      }
+    }
+    if (!info) info = { fail: 1, at: Date.now() };
+    elSave(W.LS_EL_LATEST, info);
+    fin(info);
+  });
+};
+
+/* Post-JB, :1000 up. Calls cb once (capped at ~35s, normally <0.5s). */
+W.elauto.refresh = function (cb) {
+  var done = false;
+  function fin() { if (done) return; done = true; if (typeof cb === 'function') try { cb(); } catch (e) {} }
+  setTimeout(function () {
+    if (!done) W.uiLog('[el] mirror refresh still running - continuing', 'warning');
+    fin();
+  }, 35000);
+  function withLatest(next) {
+    var c = elJson(W.LS_EL_LATEST);
+    if (c && c.sha) { next(c); return; }
+    if (c && c.fail && Date.now() - c.at < 30 * 60000) { next(null); return; }
+    W.elauto.prefetch(function (x) { next(x && x.sha ? x : null); });
+  }
+  elXhrJson('http://127.0.0.1:1000/file_meta?path=elf-launcher.elf&t=' + Date.now(), 2000, function (err, meta) {
+    if (err || !meta || !meta.ok) {
+      W.uiLog('[el] mirror check skipped (' + (err ? err.message : 'no answer') + ')', 'info');
+      fin();
+      return;
+    }
+    var old = elJson(W.LS_EL_MIRROR);
+    var msha = elSha(meta.checksum);
+    var have = !!(meta.exists && (meta.size | 0) > 4096);
+    if (have) elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: (old && old.sha === msha) ? old.tag : '', at: Date.now() });
+    else W.elauto.forgetMirror();
+    withLatest(function (latest) {
+      if (!latest) {
+        W.uiLog('[el] GitHub latest unknown (offline?) - mirror kept: ' + (have ? W.elauto.mirrorLabel() : 'none'), 'info');
+        fin();
+        return;
+      }
+      if (have && msha === latest.sha) {
+        elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: latest.tag, at: Date.now() });
+        W.uiLog('[el] console mirror is latest Elf Launcher ' + latest.tag, 'info');
+        fin();
+        return;
+      }
+      W.uiLog('[el] Elf Launcher ' + latest.tag + ' -> console mirror (sha256 ' + latest.sha.substring(0, 12) + ') ...', 'info');
+      var q = 'http://127.0.0.1:1000/update?path=elf-launcher.elf'
+        + '&url=' + encodeURIComponent(latest.url)
+        + '&sha256=' + latest.sha
+        + (latest.size ? '&size=' + latest.size : '');
+      elXhrJson(q, 30000, function (e2, u) {
+        if (!e2 && u && u.ok && elSha(u.sha256) === latest.sha) {
+          elSave(W.LS_EL_MIRROR, { sha: latest.sha, size: (u.bytes | 0) || latest.size, tag: latest.tag, at: Date.now() });
+          W.uiLog('[el] mirror updated to Elf Launcher ' + latest.tag + ' - used from next boot', 'success');
+        } else {
+          W.uiLog('[el] mirror update failed: ' + (e2 ? e2.message : (u && u.message) || 'bad reply'), 'warning');
+        }
+        fin();
+      });
+    });
+  });
 };
 
 })(typeof window !== 'undefined' ? window : this);

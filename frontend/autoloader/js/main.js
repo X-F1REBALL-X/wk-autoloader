@@ -40,6 +40,9 @@ W.startChain = function (skipElfSend) {
     W.els.detectChip.className = 'chip ok';
   }
 
+  /* Known console mirror => chain skips the bundled ELF, mirror is sent after JB. */
+  W.state.elMirrorFirst = !skipElfSend && !W.state.forceAutoloadName && !W.state.elfHttpAlreadyUp
+    && !!(W.elauto && W.elauto.mirrorFirstOk(picked));
   var autoloadName = W.state.forceAutoloadName || (skipElfSend ? 'wkal-skip' : W.autoloadElfName());
   var urls = W.buildExploitUrls(autoloadName);
   W.state.UMTX2_URL = urls.umtx2;
@@ -53,7 +56,9 @@ W.startChain = function (skipElfSend) {
 
   W.uiLog('Post-JB launcher: ' + (W.state.elfHttpAlreadyUp
     ? 'Elf Launcher Hybrid (open :1000 only)'
-    : 'Elf Launcher Hybrid (send ' + autoloadName + ' then open :1000)'), 'info');
+    : W.state.elMirrorFirst
+      ? 'Elf Launcher console mirror ' + W.elauto.mirrorLabel() + ' (bundled ' + W.BUNDLED_ELFLAUNCHER_VER + ' = fallback)'
+      : 'Elf Launcher Hybrid (send ' + autoloadName + ' ' + W.BUNDLED_ELFLAUNCHER_VER + ' then open :1000)'), 'info');
   W.uiLog('Chain: ' + picked, 'info');
 
   if (W.els.splash) {
@@ -128,6 +133,8 @@ W.start = function () {
   }
   W.state.launcherHttpOpenStarted = false;
   W.state.elfHttpAlreadyUp = false;
+  W.state.elMirrorFirst = false;
+  W.state.elRefreshRan = false;
   W.state.launcherChoice = W.CHOICE_ELF_LAUNCHER;
 
   if (W.state.pendingSelfUpdate || W.state.updateOnlyMode) {
@@ -200,6 +207,10 @@ window.addEventListener('load', function () {
   setTimeout(function () {
     if (W.selfupd && W.selfupd.check && !W.state.chainStarted) W.selfupd.check();
   }, 2500);
+  /* Elf Launcher latest (for the post-JB mirror refresh). Splash only. */
+  setTimeout(function () {
+    if (W.elauto && W.elauto.prefetch && !W.state.chainStarted) W.elauto.prefetch();
+  }, 900);
   try {
     W.uiLog('[boot] ui ready in ' + (Date.now() - t0) + 'ms', 'info');
   } catch (e) {}

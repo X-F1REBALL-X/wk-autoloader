@@ -339,12 +339,16 @@ if not asset:
     print("Error: no elf-launcher.elf asset on latest release", file=sys.stderr)
     sys.exit(1)
 url = asset["browser_download_url"]
+want = (asset.get("digest") or "").split(":", 1)[-1].lower()
 print(f"elf-launcher: downloading {tag} {asset['name']} ...", file=sys.stderr)
 body = fetch(url)
+digest = hashlib.sha256(body).hexdigest()
+if want and digest != want:
+    print(f"Error: elf-launcher sha256 {digest} != release digest {want}", file=sys.stderr)
+    sys.exit(1)
 os.makedirs(os.path.dirname(dest), exist_ok=True)
 with open(dest, "wb") as f:
     f.write(body)
-digest = hashlib.sha256(body).hexdigest()
 with open(dest + ".sha256", "w") as f:
     f.write(f"{tag} {digest}\n")
 print(f"elf-launcher: saved {dest} ({tag} {digest[:12]}...)", file=sys.stderr)
@@ -352,17 +356,20 @@ print(tag)
 PY
 }
 
-if ! elflauncher_from_local; then
-  if TAG=$(download_elflauncher_latest); then
-    ELFLAUNCHER_TAG="$TAG"
-  else
-    if [ -f "$ELFLAUNCHER_DEST" ]; then
-      echo "warning: elf-launcher download failed; keeping existing $ELFLAUNCHER_DEST"
-    else
-      echo "Error: elf-launcher.elf missing (no local tip, download failed)." >&2
-      exit 1
-    fi
-  fi
+# Bundled copy is only the offline fallback (the console mirror wins at boot),
+# so take the latest release first; a stale sibling tip must not pin an old one.
+# ELFLAUNCHER_LOCAL=1 keeps the old local-first order.
+if [ "${ELFLAUNCHER_LOCAL:-0}" = "1" ] && elflauncher_from_local; then
+  :
+elif TAG=$(download_elflauncher_latest); then
+  ELFLAUNCHER_TAG="$TAG"
+elif elflauncher_from_local; then
+  echo "warning: elf-launcher latest download failed; using local tip"
+elif [ -f "$ELFLAUNCHER_DEST" ]; then
+  echo "warning: elf-launcher download failed; keeping existing $ELFLAUNCHER_DEST"
+else
+  echo "Error: elf-launcher.elf missing (no local tip, download failed)." >&2
+  exit 1
 fi
 
 if [ -f "$ELFLAUNCHER_DEST" ]; then

@@ -1,5 +1,5 @@
 # WebKit Autoloader Installer - Native PS5 ELF Makefile
-# Release tree marker: v1.1.1-test
+# Release tree marker: v1.1.1
 
 # Tools
 PYTHON := python3

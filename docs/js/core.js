@@ -62,8 +62,8 @@ W.LS_THEME_KEY = 'wkal-theme';
 W.LS_SOUND_KEY = 'wkal_sound';
 W.LS_HISTORY_KEY = 'wkal_jb_history';
 W.CHOICE_ELF_LAUNCHER = 'elf-launcher';
-W.BUNDLED_ELFLAUNCHER_SHA = '876e6c1173149e82334c2bac133c94acece52547ad1c1d4be9e694323bf24bb5';
-W.BUNDLED_ELFLAUNCHER_VER = '2.0.0';
+W.BUNDLED_ELFLAUNCHER_SHA = 'bea250dd2607952a87038ef3495e9e2723babe80423981c0a96e205c0136e7ae';
+W.BUNDLED_ELFLAUNCHER_VER = '2.0.1';
 W.CONSOLE_MIRROR_URI = 'file:///data/elf-launcher/mirror/elf-launcher.elf';
 W.STALL_MS = 18000;
 
@@ -177,7 +177,7 @@ W.applyProgressVisual = function (display, message) {
   }
 };
 
-W.updateProgress = function (percent, message) {
+W.updateProgress = function (percent, message, snap) {
   percent = Math.max(0, Math.min(100, +percent));
   if (!W.state.progressDone && percent < W.state.progressPct && percent !== 0) {
   } else {
@@ -187,12 +187,19 @@ W.updateProgress = function (percent, message) {
   if (W.state.progressDisplay > W.state.progressPct) {
     W.state.progressDisplay = W.state.progressPct;
   }
-  W.applyProgressVisual(
-    W.state.progressDisplay < W.state.progressPct
-      ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
-      : W.state.progressPct,
-    message
-  );
+  /* snap=true (real mirror floors / success): paint % immediately.
+     Soft path keeps the old ease when the 50ms driver is running. */
+  if (snap || percent >= 100) {
+    W.state.progressDisplay = W.state.progressPct;
+    W.applyProgressVisual(W.state.progressPct, message);
+  } else {
+    W.applyProgressVisual(
+      W.state.progressDisplay < W.state.progressPct
+        ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
+        : W.state.progressPct,
+      message
+    );
+  }
   if (W.state.progressPct >= 100 && W.state.progressDisplay >= 99.2) {
     W.applyProgressVisual(100, message);
     W.state.progressDone = true;
@@ -204,21 +211,9 @@ W.updateProgress = function (percent, message) {
 W.bumpProgressFloor = function (floor) {
   if (W.state.progressDone) return;
   if (floor > W.state.progressPct) {
-    /* Real floor from mirror: apply once. If we were in kernel quiet, leave quiet
-       so the bar can ease to the new floor, then re-enter quiet (no creep thrash). */
-    var wasQuiet = W.state.progressKernelQuiet;
-    if (wasQuiet) {
-      W.state.progressKernelQuiet = false;
-      W.state.progressPaused = false;
-    }
-    W.updateProgress(floor);
-    if (wasQuiet) {
-      /* One-shot ease toward the new floor, then pause again. */
-      W.startProgressDriver();
-      setTimeout(function () {
-        if (!W.state.progressDone && W.state.exploitMode === 'relapse') W.enterKernelQuiet();
-      }, 400);
-    }
+    /* Real floor: snap the visible bar/ring immediately. Do not depend on the
+       50ms driver (paused during Relapse kernel quiet). Stay quiet if already. */
+    W.updateProgress(floor, null, true);
   }
 };
 
@@ -318,17 +313,11 @@ W.finishProgressSuccess = function (message) {
   W.stopElapsed();
   if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
   if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
-  var from = W.state.progressPct;
-  var start = Date.now();
   if (message && W.els.progressLabel) W.els.progressLabel.textContent = message;
-  var anim = setInterval(function () {
-    var p = Math.min(1, (Date.now() - start) / 900);
-    W.updateProgress(Math.floor(from + (100 - from) * p));
-    if (p >= 1) {
-      try { clearInterval(anim); } catch (eA) {}
-      W.updateProgress(100, message || W.t('jailbreakSuccess'));
-    }
-  }, 30);
+  /* Jump straight to 100% - do not ease from a lagged display during kernel quiet. */
+  W.state.progressPct = 100;
+  W.state.progressDisplay = 100;
+  W.applyProgressVisual(100, message || W.t('jailbreakSuccess'));
   try { document.body.className = 'done'; } catch (e) {}
   if (W.els.successMsg) {
     W.els.successMsg.innerHTML = '<span class="check" aria-hidden="true"></span>' + W.t('jailbreakSuccess');

@@ -666,27 +666,29 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       else if (/^\[\+\]/.test(textLine) || /success|complete|listening/i.test(textLine)) kind = 'success';
       else if (/warning|warn/i.test(textLine)) kind = 'warning';
       setRelapseStatus(textLine);
-      if (/Offsets ready|Firmware:/.test(textLine)) W.bumpProgressFloor(10);
-      else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(18);
-      else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(32);
-      else if (/Worker/.test(textLine)) W.bumpProgressFloor(48);
+      /* Relapse floors calibrated to real stages. Snap via bumpProgressFloor
+         (display must not lag during kernel quiet). Ohad: JB used to show ~58%
+         at elfldr because eased display never caught up while the driver was paused. */
+      if (/Offsets ready|Firmware:/.test(textLine)) W.bumpProgressFloor(12);
+      else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(22);
+      else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(38);
+      else if (/Worker/.test(textLine)) W.bumpProgressFloor(55);
       else if (/ucred_addr/.test(textLine)) {
-        /* Quiet first so bumpProgressFloor can one-shot ease then re-pause. */
         if (W.enterKernelQuiet) W.enterKernelQuiet();
-        W.bumpProgressFloor(66);
-      } else if (/kernel/i.test(textLine)) {
-        /* Enter kernel quiet before the floor bump so creep stops during kR/W. */
-        if (W.enterKernelQuiet) W.enterKernelQuiet();
-        if (/fast read and write ready/i.test(textLine)) W.bumpProgressFloor(74);
-        else if (/privileges ready/i.test(textLine)) W.bumpProgressFloor(82);
-        else W.bumpProgressFloor(70);
-      } else if (/\bPipes\b/i.test(textLine) && /ready|established|located/i.test(textLine)) {
-        if (W.enterKernelQuiet) W.enterKernelQuiet();
-        W.bumpProgressFloor(74);
-      } else if (/elfldr|listening on port 9021/.test(textLine)) {
+        W.bumpProgressFloor(75);
+      } else if (/elfldr|listening on port 9021|kernel exploit complete|payloads loaded|kernel chain complete/i.test(textLine)) {
         if (W.leaveKernelQuiet) W.leaveKernelQuiet();
-        W.bumpProgressFloor(88);
-        W._maybeApply('relapse-elfldr');
+        W.bumpProgressFloor(96);
+        if (/elfldr|listening on port 9021/i.test(textLine)) W._maybeApply('relapse-elfldr');
+      } else if (/\bPipes\b/i.test(textLine) && /ready|established|located|fast read/i.test(textLine)) {
+        if (W.enterKernelQuiet) W.enterKernelQuiet();
+        W.bumpProgressFloor(80);
+      } else if (/kernel/i.test(textLine)) {
+        if (W.enterKernelQuiet) W.enterKernelQuiet();
+        if (/fast read and write ready/i.test(textLine)) W.bumpProgressFloor(80);
+        else if (/privileges ready/i.test(textLine)) W.bumpProgressFloor(90);
+        else if (/read and write ready/i.test(textLine)) W.bumpProgressFloor(72);
+        else W.bumpProgressFloor(62);
       }
       W.uiLog('[relapse] ' + textLine, kind);
     }

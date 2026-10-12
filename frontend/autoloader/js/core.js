@@ -64,8 +64,8 @@ W.LS_THEME_KEY = 'wkal-theme';
 W.LS_SOUND_KEY = 'wkal_sound';
 W.LS_HISTORY_KEY = 'wkal_jb_history';
 W.CHOICE_ELF_LAUNCHER = 'elf-launcher';
-W.BUNDLED_ELFLAUNCHER_SHA = 'f09931e6754834a32b8cb9fa39ef7222360d9575076865bf84c77d227f305fd1';
-W.BUNDLED_ELFLAUNCHER_VER = '2.0.2';
+W.BUNDLED_ELFLAUNCHER_SHA = '6d038b51ebfe772ff035faa68465e5cd4c1c943caafb95092d01fbfb4ba2f2e8';
+W.BUNDLED_ELFLAUNCHER_VER = '2.0.3';
 W.CONSOLE_MIRROR_URI = 'file:///data/elf-launcher/mirror/elf-launcher.elf';
 W.STALL_MS = 18000;
 

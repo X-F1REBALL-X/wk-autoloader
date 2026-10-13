@@ -43,6 +43,8 @@ W.startChain = function (skipElfSend) {
   /* Known console mirror => chain skips the bundled ELF, mirror is sent after JB. */
   W.state.elMirrorFirst = !skipElfSend && !W.state.forceAutoloadName && !W.state.elfHttpAlreadyUp
     && !!(W.elauto && W.elauto.mirrorFirstOk(picked));
+  /* Where the Elf Launcher that ends up on :1000 comes from (no-downgrade check). */
+  W.state.elRunSrc = W.state.elfHttpAlreadyUp ? 'preexisting' : (W.state.elMirrorFirst ? 'mirror' : 'bundled');
   var autoloadName = W.state.forceAutoloadName || (skipElfSend ? 'wkal-skip' : W.autoloadElfName());
   var urls = W.buildExploitUrls(autoloadName);
   W.state.UMTX2_URL = urls.umtx2;

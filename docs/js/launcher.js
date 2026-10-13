@@ -372,6 +372,7 @@ W.launcher.openElfLauncherPage = function () {
     }
     W.uiLog('Mirror miss, sending bundled Elf Launcher ' + W.BUNDLED_ELFLAUNCHER_VER, 'warning');
     W.elauto.forgetMirror();
+    W.state.elRunSrc = 'bundled';
     W.launcher.requestResendAutoload('elf-launcher.elf');
     W.state.elMirrorFirst = false;
     maybeNavigate(false);
@@ -484,14 +485,61 @@ function elXhrJson(url, timeoutMs, cb) {
 W.elauto.mirrorLabel = function () {
   var m = elJson(W.LS_EL_MIRROR);
   if (!m) return 'unknown';
-  return (m.tag ? m.tag + ' ' : '') + (m.sha ? m.sha.substring(0, 12) : 'no sha');
+  return (m.ver ? 'v' + m.ver + ' ' : (m.tag ? m.tag + ' ' : '')) + (m.sha ? m.sha.substring(0, 12) : 'no sha');
 };
 
 /* Mirror first only when Elf saw a real file there and the chain's elfldr can load it. */
 W.elauto.mirrorFirstOk = function (chain) {
   if (chain !== 'relapse' && chain !== 'poops' && chain !== 'p2jb') return false;
   var m = elJson(W.LS_EL_MIRROR);
-  return !!(m && (m.size | 0) > 4096);
+  if (!(m && (m.size | 0) > 4096)) return false;
+  if (m.ver && W.elauto.cmpVer(W.BUNDLED_ELFLAUNCHER_VER, m.ver) > 0) {
+    W.uiLog('[el] bundled Elf Launcher ' + W.BUNDLED_ELFLAUNCHER_VER + ' is newer than installed ' + m.ver + ' - sending bundled', 'info');
+    return false;
+  }
+  if (m.ver) W.uiLog('[el] installed Elf Launcher ' + m.ver + ' >= bundled ' + W.BUNDLED_ELFLAUNCHER_VER + ' - launching installed', 'info');
+  return true;
+};
+
+/* Semver compare ("v2.0.10" > "2.0.9"); pre-release suffix sorts lower. 0 if either unknown. */
+W.elauto.parseVer = function (v) {
+  var m = /(\d+)\.(\d+)(?:\.(\d+))?(-[0-9A-Za-z.-]+)?/.exec(String(v || ''));
+  return m ? [m[1] | 0, m[2] | 0, (m[3] || 0) | 0, m[4] ? 0 : 1] : null;
+};
+W.elauto.cmpVer = function (a, b) {
+  var x = W.elauto.parseVer(a), y = W.elauto.parseVer(b), i;
+  if (!x || !y) return 0;
+  for (i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] > y[i] ? 1 : -1;
+  return 0;
+};
+/* APP_VERSION embedded in the Elf Launcher webapp (index.html inside the ELF). */
+W.elauto.extractVer = function (text) {
+  var m = /APP_VERSION\s*=\s*["']([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[0-9A-Za-z.-]+)?)["']/.exec(String(text || ''));
+  return m ? m[1] : '';
+};
+/* Version of the Elf Launcher running on :1000 (its served index.html). */
+W.elauto.runningVer = function (cb) {
+  /* Elf Launcher >= 2.0.5 (selfcheck) reports {app, mirror_app} in /version. */
+  elXhrJson('http://127.0.0.1:1000/version?t=' + Date.now(), 2000, function (err, j) {
+    if (!err && j && W.elauto.parseVer(j.app)) {
+      cb(String(j.app), W.elauto.parseVer(j.mirror_app) ? String(j.mirror_app) : '');
+      return;
+    }
+    W.elauto.runningVerHtml(function (v) { cb(v, ''); });
+  });
+};
+W.elauto.runningVerHtml = function (cb) {
+  var done = false;
+  function fin(v) { if (done) return; done = true; try { cb(v || ''); } catch (e) {} }
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'http://127.0.0.1:1000/?wkalver=' + Date.now(), true);
+    xhr.timeout = 3000;
+    xhr.onload = function () { fin(xhr.status === 200 ? W.elauto.extractVer(xhr.responseText) : ''); };
+    xhr.onerror = xhr.ontimeout = function () { fin(''); };
+    xhr.send();
+  } catch (e) { fin(''); }
+  setTimeout(function () { fin(''); }, 3500);
 };
 
 W.elauto.forgetMirror = function () { elSave(W.LS_EL_MIRROR, null); };
@@ -564,8 +612,24 @@ W.elauto.refresh = function (cb) {
     var old = elJson(W.LS_EL_MIRROR);
     var msha = elSha(meta.checksum);
     var have = !!(meta.exists && (meta.size | 0) > 4096);
-    if (have) elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: (old && old.sha === msha) ? old.tag : '', at: Date.now() });
+    var same = !!(old && old.sha && old.sha === msha);
+    W.elauto.runningVer(function (rver, mver) {
+    var src = W.state.elRunSrc || 'bundled';
+    /* Installed version: reported by Elf (mirror_app), else the mirror's own
+       (running from it), else what we recorded for this sha. */
+    var iver = (same && old.ver) ? old.ver : '';
+    if (have && mver) iver = mver;
+    else if (have && rver && src === 'mirror' && W.elauto.cmpVer(rver, iver) > 0) iver = rver;
+    if (rver && iver && W.elauto.cmpVer(rver, iver) > 0)
+      W.uiLog('[el] running Elf Launcher ' + rver + ' is newer than the console mirror ' + iver
+        + ' - kept running, but it is NOT saved: next boot starts ' + iver + '. Save it to mirror/elf-launcher.elf (Elf Upload + Save).', 'warning');
+    if (have) elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: same ? old.tag : '', ver: iver, at: Date.now() });
     else W.elauto.forgetMirror();
+    /* Floor nothing may go below: installed mirror, the running Elf, bundled. */
+    var floor = iver;
+    if (rver && W.elauto.cmpVer(rver, floor) > 0) floor = rver;
+    if (!have && W.elauto.cmpVer(W.BUNDLED_ELFLAUNCHER_VER, floor) > 0) floor = W.BUNDLED_ELFLAUNCHER_VER;
+    W.uiLog('[el] installed Elf Launcher ' + (iver || (have ? 'unknown' : 'none')) + ', running ' + (rver || '?') + ' (' + src + ')', 'info');
     withLatest(function (latest) {
       if (!latest) {
         W.uiLog('[el] GitHub latest unknown (offline?) - mirror kept: ' + (have ? W.elauto.mirrorLabel() : 'none'), 'info');
@@ -573,8 +637,18 @@ W.elauto.refresh = function (cb) {
         return;
       }
       if (have && msha === latest.sha) {
-        elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: latest.tag, at: Date.now() });
+        elSave(W.LS_EL_MIRROR, { sha: msha, size: meta.size | 0, tag: latest.tag, ver: iver || String(latest.tag).replace(/^v/i, ''), at: Date.now() });
         W.uiLog('[el] console mirror is latest Elf Launcher ' + latest.tag, 'info');
+        fin();
+        return;
+      }
+      if (have && !iver) {
+        W.uiLog('[el] installed Elf Launcher version unknown - not replacing it (no downgrade); checked next boot', 'info');
+        fin();
+        return;
+      }
+      if (!W.elauto.parseVer(latest.tag) || W.elauto.cmpVer(latest.tag, floor) <= 0) {
+        W.uiLog('[el] installed Elf Launcher ' + (floor || '?') + ' is newest (GitHub ' + latest.tag + '), skipping', 'info');
         fin();
         return;
       }
@@ -585,13 +659,14 @@ W.elauto.refresh = function (cb) {
         + (latest.size ? '&size=' + latest.size : '');
       elXhrJson(q, 30000, function (e2, u) {
         if (!e2 && u && u.ok && elSha(u.sha256) === latest.sha) {
-          elSave(W.LS_EL_MIRROR, { sha: latest.sha, size: (u.bytes | 0) || latest.size, tag: latest.tag, at: Date.now() });
+          elSave(W.LS_EL_MIRROR, { sha: latest.sha, size: (u.bytes | 0) || latest.size, tag: latest.tag, ver: String(latest.tag).replace(/^v/i, ''), at: Date.now() });
           W.uiLog('[el] mirror updated to Elf Launcher ' + latest.tag + ' - used from next boot', 'success');
         } else {
           W.uiLog('[el] mirror update failed: ' + (e2 ? e2.message : (u && u.message) || 'bad reply'), 'warning');
         }
         fin();
       });
+    });
     });
   });
 };

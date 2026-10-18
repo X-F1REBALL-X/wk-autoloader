@@ -1,0 +1,10 @@
+# Keep the GitHub language bar on the loader's own code.
+# Bundled third-party code
+frontend/autoloader/relapse/** linguist-vendored
+src/inflate.c linguist-vendored
+src/inflate.h linguist-vendored
+# Build files and helper scripts
+Makefile linguist-detectable=false
+build_release.sh linguist-detectable=false
+build_deps.sh linguist-detectable=false
+tools/** linguist-detectable=false

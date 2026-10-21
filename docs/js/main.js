@@ -4,10 +4,12 @@ var W = g.WKAL = g.WKAL || {};
 
 /* Proven startChain timings kept (mirror interval, relapse 12s warn, reveal 500ms). */
 W.startChain = function (skipElfSend) {
-  W.uiLog('WK Autoloader by X-F1REBALL-X', 'success');
+  W.uiLog('IgniKey by X-F1REBALL-X', 'success');
   if (W.els.statusMsg) W.els.statusMsg.textContent = W.t('jailbreakStarted');
   W.updateProgress(0, W.t('jailbreakStarted'));
   W.startProgressDriver();
+  W.state.runRecorded = false;
+  W.state.runRecordedResult = '';
   W.startElapsed();
   W.startStallWatch();
   W.state.runStage = 'early';
@@ -28,6 +30,7 @@ W.startChain = function (skipElfSend) {
 
   var fw = W.detectFirmware();
   var picked = W.pickExploit();
+  if (picked && picked !== 'relapse') picked = 'relapse';
   if (!picked) {
     W.setMeta(fw ? fw.str : '-', 'unsupported');
     W.finishProgressFail(W.t('jailbreakFail'));
@@ -40,59 +43,27 @@ W.startChain = function (skipElfSend) {
     W.els.detectChip.className = 'chip ok';
   }
 
-  /* Known console mirror => chain skips the bundled ELF, mirror is sent after JB. */
-  W.state.elMirrorFirst = !skipElfSend && !W.state.forceAutoloadName && !W.state.elfHttpAlreadyUp
-    && !!(W.elauto && W.elauto.mirrorFirstOk(picked));
-  /* Where the Elf Launcher that ends up on :1000 comes from (no-downgrade check). */
-  W.state.elRunSrc = W.state.elfHttpAlreadyUp ? 'preexisting' : (W.state.elMirrorFirst ? 'mirror' : 'bundled');
   var autoloadName = W.state.forceAutoloadName || (skipElfSend ? 'wkal-skip' : W.autoloadElfName());
   var urls = W.buildExploitUrls(autoloadName);
-  W.state.UMTX2_URL = urls.umtx2;
-  W.state.P2JB_URL = urls.p2jb;
+  W.state.UMTX2_URL = '';
+  W.state.P2JB_URL = '';
   W.state.RELAPSE_URL = urls.relapse;
-  W.state.POOPS_URL = urls.poops;
-  W.state.EXPLOIT_URL = picked === 'umtx2' ? urls.umtx2
-    : picked === 'p2jb' ? urls.p2jb
-    : picked === 'poops' ? urls.poops
-    : urls.relapse;
+  W.state.POOPS_URL = '';
+  W.state.EXPLOIT_URL = urls.relapse;
 
   W.uiLog('Post-JB launcher: ' + (W.state.elfHttpAlreadyUp
     ? 'Elf Launcher Hybrid (open :1000 only)'
-    : W.state.elMirrorFirst
-      ? 'Elf Launcher console mirror ' + W.elauto.mirrorLabel() + ' (bundled ' + W.BUNDLED_ELFLAUNCHER_VER + ' = fallback)'
-      : 'Elf Launcher Hybrid (send ' + autoloadName + ' ' + W.BUNDLED_ELFLAUNCHER_VER + ' then open :1000)'), 'info');
+    : 'Elf Launcher Hybrid (send ' + autoloadName + ' then open :1000)'), 'info');
   W.uiLog('Chain: ' + picked, 'info');
 
-  if (W.els.splash) {
-    W.els.splash.classList.add('hide');
-    setTimeout(function () {
-      W.els.splash.hidden = true;
-      if (W.els.loader) W.els.loader.hidden = false;
-    }, 480);
-  }
+  try { document.body.classList.add('running'); } catch (eRun) {}
+  if (W.els.loader) W.els.loader.hidden = false;
 
-  var mirrorMs = picked === 'p2jb' ? 1000 : 500;
-  function armMirrorTimer(ms) {
-    if (W.state.mirrorTimer) {
-      clearInterval(W.state.mirrorTimer);
-      W.state.mirrorTimer = 0;
-    }
-    W.state.mirrorTimer = setInterval(function () {
-      if (W.mirrors && W.mirrors.mirrorExploit) W.mirrors.mirrorExploit();
-      /* Mark armed once progress moves past early webkit stage. */
-      if (W.state.progressPct >= 32 && W.state.runStage === 'early') {
-        W.state.runStage = 'armed';
-        /* Relapse: once armed, pause fake progress creep (host-only). */
-        if (picked === 'relapse' && W.enterKernelQuiet) W.enterKernelQuiet();
-      }
-      /* Optionally slow mirror polling during Relapse kernel quiet (500ms -> 1500ms). */
-      if (picked === 'relapse' && W.state.progressKernelQuiet && mirrorMs < 1500) {
-        mirrorMs = 1500;
-        armMirrorTimer(mirrorMs);
-      }
-    }, ms);
-  }
-  armMirrorTimer(mirrorMs);
+  W.state.mirrorTimer = setInterval(function () {
+    if (W.mirrors && W.mirrors.mirrorExploit) W.mirrors.mirrorExploit();
+    /* Mark armed once progress moves past early webkit stage. */
+    if (W.state.progressPct >= 32 && W.state.runStage === 'early') W.state.runStage = 'armed';
+  }, picked === 'p2jb' ? 1000 : 500);
 
   try {
     if (picked === 'umtx2') {
@@ -135,8 +106,6 @@ W.start = function () {
   }
   W.state.launcherHttpOpenStarted = false;
   W.state.elfHttpAlreadyUp = false;
-  W.state.elMirrorFirst = false;
-  W.state.elRefreshRan = false;
   W.state.launcherChoice = W.CHOICE_ELF_LAUNCHER;
 
   if (W.state.pendingSelfUpdate || W.state.updateOnlyMode) {
@@ -179,7 +148,7 @@ window.wkalAfterLangChange = function () {
   W.ui.syncChainUi();
   var go = document.getElementById('startJailbreak');
   var cancel = document.getElementById('cancelAutoStart');
-  if (go && !W.state.chainStarted && !go.disabled) go.textContent = W.t('startJailbreak');
+  if (go && !W.state.chainStarted && !go.disabled) go.textContent = W.t('startJailbreak') || 'START';
   if (cancel) cancel.textContent = W.t('cancel');
   if (W.state.selfUpdateInfo && W.selfupd && W.selfupd.paint) W.selfupd.paint();
   if (W.els.elapsedMsg && !W.state.elapsedTimer) {
@@ -209,10 +178,6 @@ window.addEventListener('load', function () {
   setTimeout(function () {
     if (W.selfupd && W.selfupd.check && !W.state.chainStarted) W.selfupd.check();
   }, 2500);
-  /* Elf Launcher latest (for the post-JB mirror refresh). Splash only. */
-  setTimeout(function () {
-    if (W.elauto && W.elauto.prefetch && !W.state.chainStarted) W.elauto.prefetch();
-  }, 900);
   try {
     W.uiLog('[boot] ui ready in ' + (Date.now() - t0) + 'ms', 'info');
   } catch (e) {}

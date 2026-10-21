@@ -7,8 +7,11 @@ W.buildExploitUrls = function (autoloadName) {
     umtx2: 'umtx2/index.html?autoload=' + autoloadName + '&v=1',
     p2jb: 'slopkit/slopkit/p2jb.html?go=1&auto=1&production=1&log=debug&payload=1&autoload=' + autoloadName + '&v=final',
     relapse: 'relapse/index.html?autoload=' + autoloadName + '&v=1',
-    /* Same production query as upstream landing; keep chain internals untouched. */
-    poops: 'slopkit/slopkit/poops.html?go=1&auto=1&production=1&log=debug&payload=1&autoload=' + autoloadName + '&v=final'
+    /* Must match poops.html PRODUCTION_QUERY / tools/gen_file_registry.py poops_iframe_url. */
+    poops: 'slopkit/slopkit/poops.html?go=1&auto=1&production=1&trigger=netcontrol'
+      + '&attempts=8&only=ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,'
+      + 'ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5'
+      + '&log=debug&payload=1&autoload=' + autoloadName + '&v=final'
   };
 };
 
@@ -74,13 +77,14 @@ W.recommendChain = function (fw) {
 };
 
 W.getChainPref = function () {
-  var v = W.lsGet(W.LS_CHAIN_KEY, 'auto');
-  if (v === 'auto' || v === 'relapse' || v === 'poops' || v === 'umtx2') return v;
-  return 'auto';
+  /* Relapse is the only selectable chain; any stored value (incl. legacy 'auto') coerces to relapse. */
+  var v = W.lsGet(W.LS_CHAIN_KEY, 'relapse');
+  if (v !== 'relapse') { try { W.lsSet(W.LS_CHAIN_KEY, 'relapse'); } catch (e) {} }
+  return 'relapse';
 };
 
 W.setChainPref = function (v) {
-  if (v !== 'auto' && v !== 'relapse' && v !== 'poops' && v !== 'umtx2') v = 'auto';
+  v = 'relapse';
   W.lsSet(W.LS_CHAIN_KEY, v);
 };
 
@@ -107,7 +111,7 @@ W.pickExploit = function () {
   var pref = W.getChainPref();
   if (pref !== 'auto') {
     if (W.fwSupports(pref, fw)) return pref;
-    W.uiLog('Saved chain ' + pref + ' not for FW ' + fw.str + ', using auto', 'warning');
+    W.uiLog('Saved chain ' + pref + ' not for FW ' + fw.str + ', using firmware default', 'warning');
   }
   var rec = W.recommendChain(fw);
   if (rec) return rec;
@@ -136,19 +140,9 @@ W.preloadChainFiles = function (chain) {
 };
 
 W.startStallWatch = function () {
+  /* Quiet UI: stall counter off - Relapse retries/kernel quiet look like hangs. */
   W.state.lastProgressAt = Date.now();
-  if (W.state.stallTimer) clearInterval(W.state.stallTimer);
-  W.state.stallTimer = setInterval(function () {
-    if (W.state.progressDone || W.state.finished) return;
-    if (W.state.runStage !== 'early' && W.state.runStage !== 'armed') return;
-    var idle = Date.now() - (W.state.lastProgressAt || 0);
-    if (idle < W.STALL_MS) return;
-    if (W.ui && W.ui.showStall) {
-      /* Restart page only while still early (before sensitive kernel stage). */
-      var early = W.state.runStage === 'early' || W.state.progressPct < 32;
-      W.ui.showStall(early);
-    }
-  }, 1000);
+  if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
 };
 
 W.recordRun = function (result) {

@@ -1,17 +1,48 @@
-<img src="docs/img/banner.png" alt="WK Autoloader">
+# IgniKey
 
-![WK Autoloader](docs/guide/img/home.png)
+PS5 Store jailbreak host (NPXS40047). Private repo by X-F1REBALL-X.
 
-Home screen jailbreak host for a jailbroken PS5. Runs the exploit chain, then opens Elf Launcher.
+Current version: **1.1.3**.
 
-## Quick start
+1.1.3 installs onto the PlayStation Store tile (Store build).
 
-1. Soft jailbreak and start [elfldr](https://github.com/ps5-payload-dev/elfldr) on port 9021.
-2. Send `wk-autoloader.elf` from the [latest release](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest). Wait for the home icon.
-3. Open the home tile, or `http://<PS5 IP>:1022` from your phone or PC.
+## What it is
 
-Everything else, including what's new in 1.1.1, is in the [guide](https://x-f1reball-x.github.io/wk-autoloader/guide/).
+IgniKey remaps the PS5 Store tile so it opens a local WebKit UI on the console.
+After sending the ELF to elfldr (`:9021`), the tile opens:
 
-Developed by [X-F1REBALL-X](https://github.com/X-F1REBALL-X).
+`http://127.0.0.1:1022/app/index.html`
 
-Credits: umtx2 (idlesauce, shahrilnet, n0llptr, SpecterDev, ChendoChap, abc, john-tornblom); Relapse (ntfargo, ufm42, Sonic_Iso, Jordy, Dr. Yenyen, TheFlow, SlidyBat, Flatz, cow, nhk, bollarz, Sleirsgoevy, EchoStretch, EarthOnion).
+Same `/app/` path as v13, with AppCache, so the page persists across reboots.
+
+## Highlights
+
+- UI: Midnight (the only theme)
+- Visible version: `1.1.3`
+- Auto Start: off by default
+- Cancel: only during the Auto Start countdown (not mid-jailbreak)
+- While running: percentage + timer on the round button
+- Supported FW: 7.00-13.60 (Relapse only).
+
+## Restore
+
+To return the Store tile to stock, download `IgniKey_Store_Restore_V1.0.0.elf` from the release,
+send it to elfldr like the IgniKey ELF, then reboot.
+
+## Build
+
+Requires the PS5 payload SDK with libmicrohttpd.
+
+```
+make store
+```
+
+Output: `IgniKey-1.0.0.elf`. Store remap sources live in `store/`;
+the UI and autoloader live in `frontend/autoloader/`.
+
+## Credits
+
+- X-F1REBALL-X
+- Relapse chain
+- elfldr
+- Store tile remap inspired by notmaj0r

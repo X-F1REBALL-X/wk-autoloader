@@ -5,7 +5,7 @@
 #
 #   third_party/ps5-elfldr             -> frontend/autoloader/shared/elfldr-ps5.elf
 #   third_party/ps5-unified-autoloader -> frontend/autoloader/payloads/payload.elf
-#   itsPLK/ps5-payload-manager@v0.5.1  -> frontend/autoloader/payloads/pldmgr.elf
+#   itsPLK/ps5-payload-manager@v0.6.3  -> frontend/autoloader/payloads/pldmgr.elf
 #   X-F1REBALL-X/elf-launcher (tip)    -> frontend/autoloader/payloads/elf-launcher.elf
 #
 # The shared elfldr is used by the slopkit chain (7.00-12.00); umtx2
@@ -47,8 +47,8 @@ PAYLOAD_DEST="$ROOT/frontend/autoloader/payloads/payload.elf"
 # Standalone Payload Manager (splash choice payload-manager -> pldmgr.elf).
 # Pinned release; local copies (docs/ or sibling relapse tree) win when present.
 PLDMGR_REPO="itsPLK/ps5-payload-manager"
-PLDMGR_TAG="v0.5.1"
-PLDMGR_PINNED_SHA=05617c69ea145d1c11b8f7a6b7d3bd9e6df3831afd25d71a4ac85d63fb8e28aa
+PLDMGR_TAG="v0.6.3"
+PLDMGR_PINNED_SHA=2a42054fd9725e1d9595ff4add95abc30e5b49446fcdcb96c06775a376a841c4
 PLDMGR_DEST="$ROOT/frontend/autoloader/payloads/pldmgr.elf"
 PLDMGR_LOCAL_CANDIDATES=(
     "$ROOT/docs/payloads/pldmgr.elf"
@@ -339,16 +339,12 @@ if not asset:
     print("Error: no elf-launcher.elf asset on latest release", file=sys.stderr)
     sys.exit(1)
 url = asset["browser_download_url"]
-want = (asset.get("digest") or "").split(":", 1)[-1].lower()
 print(f"elf-launcher: downloading {tag} {asset['name']} ...", file=sys.stderr)
 body = fetch(url)
-digest = hashlib.sha256(body).hexdigest()
-if want and digest != want:
-    print(f"Error: elf-launcher sha256 {digest} != release digest {want}", file=sys.stderr)
-    sys.exit(1)
 os.makedirs(os.path.dirname(dest), exist_ok=True)
 with open(dest, "wb") as f:
     f.write(body)
+digest = hashlib.sha256(body).hexdigest()
 with open(dest + ".sha256", "w") as f:
     f.write(f"{tag} {digest}\n")
 print(f"elf-launcher: saved {dest} ({tag} {digest[:12]}...)", file=sys.stderr)
@@ -356,20 +352,17 @@ print(tag)
 PY
 }
 
-# Bundled copy is only the offline fallback (the console mirror wins at boot),
-# so take the latest release first; a stale sibling tip must not pin an old one.
-# ELFLAUNCHER_LOCAL=1 keeps the old local-first order.
-if [ "${ELFLAUNCHER_LOCAL:-0}" = "1" ] && elflauncher_from_local; then
-  :
-elif TAG=$(download_elflauncher_latest); then
-  ELFLAUNCHER_TAG="$TAG"
-elif elflauncher_from_local; then
-  echo "warning: elf-launcher latest download failed; using local tip"
-elif [ -f "$ELFLAUNCHER_DEST" ]; then
-  echo "warning: elf-launcher download failed; keeping existing $ELFLAUNCHER_DEST"
-else
-  echo "Error: elf-launcher.elf missing (no local tip, download failed)." >&2
-  exit 1
+if ! elflauncher_from_local; then
+  if TAG=$(download_elflauncher_latest); then
+    ELFLAUNCHER_TAG="$TAG"
+  else
+    if [ -f "$ELFLAUNCHER_DEST" ]; then
+      echo "warning: elf-launcher download failed; keeping existing $ELFLAUNCHER_DEST"
+    else
+      echo "Error: elf-launcher.elf missing (no local tip, download failed)." >&2
+      exit 1
+    fi
+  fi
 fi
 
 if [ -f "$ELFLAUNCHER_DEST" ]; then

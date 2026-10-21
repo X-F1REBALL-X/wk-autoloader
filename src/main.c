@@ -206,12 +206,12 @@ int main(void) {
         snprintf(uid_param, sizeof(uid_param), "&uid=%08x", (unsigned int)uid);
     }
 
-    /* Companion homescreen page (Elf Launcher): install when missing.
-     * Never autoload unrelated payloads here. */
+    /* Companion homescreen pages (ELFL00001 + PLDM00001): install when missing.
+     * Same for Store (IGNIKEY_STORE) and homescreen builds. Never autoload payloads. */
     wkali_install_companions();
 
     /* Always open the versioned browser URL and keep the server loop, even when
-     * the WK Autoloader page is already on disk — force refresh / reinstall. */
+     * the WK Autoloader page is already on disk - force refresh / reinstall. */
 
     /* Launch the browser at a versioned URL so the old AppCache master entry
      * for "/" is never served from the previous install. */
@@ -229,7 +229,7 @@ int main(void) {
         if (!install_notified && atomic_load(&install_completed)) {
             install_notified = 1;
             /* Toast already sent from wkali_install_app (Elf Launcher style). */
-            wkali_log("[WKALI] Install complete — server stays on :%d for UI/home icon\n",
+            wkali_log("[WKALI] Install complete - server stays on :%d for UI/home icon\n",
                       WKALI_PORT);
         }
         usleep(100000); /* 100ms sleep */

@@ -97,7 +97,7 @@ BUILD_TIME_PLACEHOLDER = b"[[BUILD_TIME_PLACEHOLDER]]"
 EXPLOIT_MODE_PLACEHOLDER = b"[[EXPLOIT_MODE]]"
 APP_DIR_PLACEHOLDER = b"[[APP_DIR_PLACEHOLDER]]"
 
-# The build-time exploit override in app.js (auto | umtx2 | p2jb | relapse).
+# The build-time exploit override in js/core.js (auto | umtx2 | p2jb | relapse | poops).
 # Defaults to "auto" (firmware routing) unless FORCE_EXPLOIT is set.
 DEFAULT_EXPLOIT_MODE = "auto"
 EXPLOIT_MODES = ("auto", "umtx2", "p2jb", "relapse", "poops")
@@ -142,8 +142,8 @@ def apply_pointer_placeholder(path, data, version):
 
 
 def apply_exploit_mode_placeholder(path, data, app_dir):
-    """Replace the [[EXPLOIT_MODE]] token in app.js from the FORCE_EXPLOIT env."""
-    if path == app_dir + "/app.js":
+    """Replace the [[EXPLOIT_MODE]] token in js/core.js from the FORCE_EXPLOIT env."""
+    if path == app_dir + "/js/core.js":
         mode = os.environ.get("FORCE_EXPLOIT", DEFAULT_EXPLOIT_MODE)
         if mode not in EXPLOIT_MODES:
             print(f"Warning: unknown FORCE_EXPLOIT '{mode}' - using 'auto'.", file=sys.stderr)
@@ -176,13 +176,13 @@ def compress_entry(data):
 
 # Autoload ELF names the splash choice can select. AppCache matches URLs
 # exactly (query included), so every variant must be listed. Keep in sync
-# with buildExploitUrls() in frontend/autoloader/app.js.
-AUTOLOAD_ELF_NAMES = ("payload.elf", "elf-launcher.elf", "wkal-skip", "wkal-mark.elf", "wkal-companions.elf")
+# with buildExploitUrls() in frontend/autoloader/js/chains.js.
+AUTOLOAD_ELF_NAMES = ("payload.elf", "elf-launcher.elf", "pldmgr.elf", "wkal-skip", "wkal-mark.elf", "wkal-companions.elf")
 
 
 # p2jb (FW 12.02-12.70, force-only): upstream's canonical production query plus
 # our autoload key (relaxed in patches/slopkit-autoload.patch). Keep in sync
-# with buildExploitUrls() in frontend/autoloader/app.js.
+# with buildExploitUrls() in frontend/autoloader/js/chains.js.
 def p2jb_iframe_url(app_dir, autoload="payload.elf"):
     return (
         app_dir + "/slopkit/slopkit/p2jb.html"
@@ -192,24 +192,28 @@ def p2jb_iframe_url(app_dir, autoload="payload.elf"):
 
 
 # umtx2 auto-runs its chain on load via the 'on_load_autorun' sessionStorage
-# key set by app.js; the URL carries the autoload payload name + a cache-bust
+# key set by js/main.js; the URL carries the autoload payload name + a cache-bust
 # that must be bumped together with the umtx2 patch (patches/umtx2-autoload.patch).
-# Keep in sync with buildExploitUrls() in frontend/autoloader/app.js.
+# Keep in sync with buildExploitUrls() in frontend/autoloader/js/chains.js.
 def umtx2_iframe_url(app_dir, autoload="payload.elf"):
     return app_dir + "/umtx2/index.html?autoload=" + autoload + "&v=1"
 
 
 # Relapse (FW 7.00-13.60 default): iframe URL carries autoload + fixed cache-bust.
-# Keep in sync with buildExploitUrls() in frontend/autoloader/app.js.
+# Keep in sync with buildExploitUrls() in frontend/autoloader/js/chains.js.
 def relapse_iframe_url(app_dir, autoload="payload.elf"):
     return app_dir + "/relapse/index.html?autoload=" + autoload + "&v=1"
 
 
 def poops_iframe_url(app_dir, autoload="payload.elf"):
+    # Canonical PRODUCTION_QUERY from poops.html exactQuery (autoload ignored).
+    # Keep in sync with buildExploitUrls() in frontend/autoloader/js/chains.js.
     return (
         app_dir + "/slopkit/slopkit/poops.html"
-        "?go=1&auto=1&production=1&log=debug"
-        "&payload=1&autoload=" + autoload + "&v=final"
+        "?go=1&auto=1&production=1&trigger=netcontrol"
+        "&attempts=8&only=ps0_preflight,ps1_prepare,ps3_stage0,ps4_validate,"
+        "ps5_stage1,ps6_stage2,ps8_stage3,ps9_stage4,ps10_stage5"
+        "&log=debug&payload=1&autoload=" + autoload + "&v=final"
     )
 
 # slopkit references its own scripts with cache-busting query strings
@@ -252,29 +256,32 @@ def collect_cachebust_urls(files):
 
 
 def manifest_omits_unused_tree(path):
-    """umtx2 full tree omitted. Slopkit: keep Poops + its JS/offsets deps only."""
-    # Payload Manager is no longer offered in the UI; caching its ~2.4MB ELF
-    # parked the installer bar around ~71% on PS5 WebKit (byte progress through
-    # payloads/pldmgr.elf after payload.elf).
+    """Omit unused slopkit assets. Keep umtx2 tree, Poops, and p2jb + shared deps."""
+    # Payload Manager is offered again (splash choice). Cache pldmgr.elf +
+    # ?autoload=pldmgr.elf URLs so the installed homescreen app can send it
+    # offline after JB. Icon is .png in the current UI (old .jpg still unused).
     base0 = path.split("?", 1)[0]
-    if base0.endswith("/payloads/pldmgr.elf") or base0.endswith("/payload-manager-icon.jpg"):
+    if base0.endswith("/payload-manager-icon.jpg"):
         return True
+    # umtx2 is an active chain (low FW); include its tree in AppCache.
     if "/umtx2/" in path:
-        return True
+        return False
     if "/slopkit/" in path:
         base = path.split("?", 1)[0]
+        # p2jb (force-only 12.02-12.70) + its modules; keep for AppCache offline.
         if base.endswith("/p2jb.html") or "/p2jb." in base:
-            return True
+            return False
         if "/offsets/" in base and base.endswith(".js"):
             return False
         keep_suffixes = (
-            "/poops.html", "/poops.js", "/core.js", "/main.js", "/utils.js",
+            "/poops.html", "/poops.js", "/p2jb.html", "/core.js", "/main.js", "/utils.js",
             "/config.js", "/logging.js", "/int64.js", "/rop.js", "/syscalls.js",
             "/module.js", "/patch.js", "/psfree/",
         )
         name = base.rsplit("/", 1)[-1]
         if any(base.endswith(s) for s in keep_suffixes) or name in (
-            "poops.html", "poops.js", "core.js", "main.js", "utils.js",
+            "poops.html", "poops.js", "p2jb.html", "p2jb.js", "p2jb_lk.js",
+            "p2jb_poops.js", "core.js", "main.js", "utils.js",
             "config.js", "logging.js", "int64.js", "rop.js", "syscalls.js",
             "module.js", "patch.js",
         ):
@@ -300,20 +307,28 @@ def build_manifest(files, version, build_time, app_dir, pointer_path, marker_pat
     redirecting into it."""
     lines = [
         "CACHE MANIFEST",
-        f"# WK Autoloader v{version} by X-F1REBALL-X (built {build_time}) - "
-        "auto-generated by tools/gen_file_registry.py, do not edit.",
+        f"# WK Autoloader v{version} ignikey-v34 by X-F1REBALL-X (built {build_time}) - "
+        "written by tools/gen_file_registry.py, do not edit.",
         "",
         "CACHE:",
     ]
+    # Installer HTML must always come from the network so a stale AppCache
+    # master entry (stock WK Autoloader with SOFT_CAP=99) cannot stick.
+    installer_network = {"/index.html", "/ignikey.html", "/"}
     cache_entries = [
         path for path, _ in files
         if path not in (pointer_path, marker_path)
+        and path not in installer_network
         and not manifest_omits_unused_tree(path)
     ]
     cache_entries.sort()
     lines += cache_entries
     for autoload in AUTOLOAD_ELF_NAMES:
         lines.append(relapse_iframe_url(app_dir, autoload))
+        # umtx2 (low FW). List iframe URLs for AppCache offline.
+        lines.append(umtx2_iframe_url(app_dir, autoload))
+        # p2jb (force-only 12.02-12.70). List iframe URLs for AppCache offline.
+        lines.append(p2jb_iframe_url(app_dir, autoload))
         # Poops optional chain (7-12). List iframe URLs for AppCache offline.
         lines.append(poops_iframe_url(app_dir, autoload))
     lines += [
@@ -328,6 +343,9 @@ def build_manifest(files, version, build_time, app_dir, pointer_path, marker_pat
         "/install",
         "/version",
         "/logs",
+        "/index.html",
+        "/ignikey.html",
+        "/",
         "",
         "FALLBACK:",
         "/ /index.html",
@@ -403,7 +421,7 @@ def main():
 
     # Header
     with open(header_out, "w") as out:
-        out.write("/* Auto-generated by tools/gen_file_registry.py - do not edit. */\n")
+        out.write("/* Written by tools/gen_file_registry.py - do not edit. */\n")
         out.write("\n")
         out.write("#ifndef FILE_REGISTRY_H\n")
         out.write("#define FILE_REGISTRY_H\n")
@@ -432,7 +450,7 @@ def main():
 
     # Source
     with open(source_out, "w") as out:
-        out.write("/* Auto-generated by tools/gen_file_registry.py - do not edit. */\n")
+        out.write("/* Written by tools/gen_file_registry.py - do not edit. */\n")
         out.write("\n")
         out.write('#include <string.h>\n')
         out.write("\n")

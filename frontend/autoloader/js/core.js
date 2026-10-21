@@ -64,8 +64,23 @@ W.LS_THEME_KEY = 'wkal-theme';
 W.LS_SOUND_KEY = 'wkal_sound';
 W.LS_HISTORY_KEY = 'wkal_jb_history';
 W.CHOICE_ELF_LAUNCHER = 'elf-launcher';
+W.CHOICE_PAYLOAD_MANAGER = 'payload-manager';
+
+W.getLauncherChoice = function () {
+  /* Payload Manager removed from UI; always Elf Launcher. */
+  return W.CHOICE_ELF_LAUNCHER;
+};
+
+W.setLauncherChoice = function (choice) {
+  var v = W.CHOICE_ELF_LAUNCHER;
+  W.lsSet(W.LS_LAUNCHER_KEY, v);
+  W.state.launcherChoice = v;
+  if (W.ui && W.ui.applyLauncherChoice) W.ui.applyLauncherChoice(v);
+  return v;
+};
+
 W.BUNDLED_ELFLAUNCHER_SHA = '1b4494e669ef07525c77036777d36a20f1eb81a708fe8262b26ffffa9452f547';
-W.BUNDLED_ELFLAUNCHER_VER = '2.0.5';
+W.BUNDLED_ELFLAUNCHER_VER = 'tip';
 W.CONSOLE_MIRROR_URI = 'file:///data/elf-launcher/mirror/elf-launcher.elf';
 W.STALL_MS = 18000;
 
@@ -75,7 +90,7 @@ W.RELAPSE_FIRMWARES = ["7.00","7.01","7.20","7.40","7.60","7.61","8.00","8.20","
 /* Poops range 7.00-12.00 inclusive. Optional alt to Relapse; Relapse stays default. */
 W.POOPS_FIRMWARES = ["7.00","7.01","7.20","7.40","7.60","7.61","8.00","8.20","8.40","8.60","9.00","9.20","9.40","9.60","10.00","10.01","10.20","10.40","10.60","11.00","11.20","11.60","12.00"];
 
-W.EXPLOIT_MODE = '[[EXPLOIT_MODE]]';
+W.EXPLOIT_MODE = 'auto';
 if (W.EXPLOIT_MODE.indexOf('[[') === 0) W.EXPLOIT_MODE = 'auto';
 
 W.bindEls = function () {
@@ -117,6 +132,27 @@ W.formatElapsed = function (ms) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 };
 
+/* Local wall-clock for the JB run (English digits, no new i18n keys). */
+W.formatLocalDateTime = function (ms) {
+  var d = new Date(typeof ms === 'number' ? ms : Date.now());
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+    + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+};
+
+/* Elapsed line: "Elapsed 0:42 · 2026-10-21 17:11" (date/time in orange). */
+W.paintElapsedLine = function (elapsedStr) {
+  if (!W.els.elapsedMsg) return;
+  var t = elapsedStr || '0:00';
+  var base = W.t('elapsed', { t: t });
+  var at = W.state.jbStartedAt ? W.formatLocalDateTime(W.state.jbStartedAt) : '';
+  if (!at) {
+    W.els.elapsedMsg.textContent = base;
+    return;
+  }
+  W.els.elapsedMsg.innerHTML = base + ' · <span class="jb-at">' + at + '</span>';
+};
+
 W.lsGet = function (k, d) {
   try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; }
 };
@@ -125,20 +161,8 @@ W.lsSet = function (k, v) {
 };
 
 W.uiLog = function (message, type) {
-  type = type || 'info';
-  var logContainer = W.els.logContainer;
-  if (!logContainer) return;
-  var wrap = logContainer.parentNode;
-  if (!wrap || wrap.hidden) return;
-  var entry = document.createElement('div');
-  entry.className = 'line ' + type;
-  entry.textContent = message;
-  logContainer.appendChild(entry);
-  while (logContainer.childElementCount > W.MAX_LOG_LINES) {
-    logContainer.removeChild(logContainer.firstChild);
-  }
-  wrap.scrollTop = wrap.scrollHeight;
-  return entry;
+  /* Quiet UI: no debug lines on screen. */
+  return null;
 };
 
 W.touchProgress = function () {
@@ -147,6 +171,7 @@ W.touchProgress = function () {
 };
 
 W.applyProgressVisual = function (display, message) {
+  /* v25: no step or % text; bar and ring only. */
   if (display < 0) display = 0;
   if (display > 100) display = 100;
   W.state.progressDisplay = display;
@@ -161,7 +186,7 @@ W.applyProgressVisual = function (display, message) {
   }
   var pctEl = W.els.progressPct;
   if (pctEl) {
-    var pctText = Math.floor(display + 1e-6) + '%';
+    var pctText = '';
     if (pctEl.textContent !== pctText) pctEl.textContent = pctText;
   }
   var ring = W.els.progressRing;
@@ -173,9 +198,9 @@ W.applyProgressVisual = function (display, message) {
       ring.style.background = bg;
     }
   }
-  if (message) {
-    if (W.els.progressLabel) W.els.progressLabel.textContent = message;
-    W.uiLog(message, 'info');
+  /* Quiet JB: no status/label text while the chain runs; % alone is enough. */
+  if (W.els.progressLabel) {
+    try { W.els.progressLabel.textContent = ''; } catch (eL) {}
   }
 };
 
@@ -189,19 +214,9 @@ W.updateProgress = function (percent, message, snap) {
   if (W.state.progressDisplay > W.state.progressPct) {
     W.state.progressDisplay = W.state.progressPct;
   }
-  /* snap=true (real mirror floors / success): paint % immediately.
-     Soft path keeps the old ease when the 50ms driver is running. */
-  if (snap || percent >= 100) {
-    W.state.progressDisplay = W.state.progressPct;
-    W.applyProgressVisual(W.state.progressPct, message);
-  } else {
-    W.applyProgressVisual(
-      W.state.progressDisplay < W.state.progressPct
-        ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
-        : W.state.progressPct,
-      message
-    );
-  }
+  /* Always snap: one paint per real event, no eased intermediate paints. */
+  W.state.progressDisplay = W.state.progressPct;
+  W.applyProgressVisual(W.state.progressPct, null);
   if (W.state.progressPct >= 100 && W.state.progressDisplay >= 99.2) {
     W.applyProgressVisual(100, message);
     W.state.progressDone = true;
@@ -246,33 +261,12 @@ W.leaveKernelQuiet = function () {
 };
 
 W.startProgressDriver = function () {
-  if (W.state.progressPaused || W.state.progressKernelQuiet) return;
-  if (W.state.progressTimer) return;
-  W.state.progressTimer = setInterval(function () {
-    if (W.state.progressDone) {
-      clearInterval(W.state.progressTimer);
-      W.state.progressTimer = 0;
-      return;
-    }
-    if (W.state.progressPaused || W.state.progressKernelQuiet) {
-      clearInterval(W.state.progressTimer);
-      W.state.progressTimer = 0;
-      return;
-    }
-    /* Creep the target, then ease the visible bar/ring toward it so it never sits still.
-       Fake creep must NOT call touchProgress - only real updateProgress/mirror bumps do. */
-    if (W.state.progressPct < 94) {
-      var next = W.state.progressPct + Math.max(0.4, (94 - W.state.progressPct) * 0.045);
-      if (next > 94) next = 94;
-      W.state.progressPct = next;
-    }
-    var disp = W.state.progressDisplay || 0;
-    var tgt = W.state.progressPct;
-    if (disp < tgt) disp += (tgt - disp) * 0.2;
-    else disp = tgt;
-    if (tgt - disp < 0.08) disp = tgt;
-    W.applyProgressVisual(disp, null);
-  }, 50);
+  /* Quiet JB: no 50ms fake creep / conic-gradient thrash during the chain.
+     Percent updates only from real mirror floors (bumpProgressFloor / snap). */
+  if (W.state.progressTimer) {
+    clearInterval(W.state.progressTimer);
+    W.state.progressTimer = 0;
+  }
 };
 
 W.stopElapsed = function () {
@@ -280,16 +274,20 @@ W.stopElapsed = function () {
     clearInterval(W.state.elapsedTimer);
     W.state.elapsedTimer = 0;
   }
+  /* Freeze final elapsed + start date/time on the same line. */
+  if (W.els.elapsedMsg && W.state.elapsedStart) {
+    W.paintElapsedLine(W.formatElapsed(Date.now() - W.state.elapsedStart));
+  }
 };
 
 W.startElapsed = function () {
   if (W.state.elapsedTimer) return;
   W.state.elapsedStart = Date.now();
-  if (W.els.elapsedMsg) W.els.elapsedMsg.textContent = W.t('elapsed', { t: '0:00' });
+  W.state.jbStartedAt = W.state.elapsedStart;
+  W.paintElapsedLine('0:00');
   W.state.elapsedTimer = setInterval(function () {
     if (!W.els.elapsedMsg) return;
-    var elapsedText = W.t('elapsed', { t: W.formatElapsed(Date.now() - W.state.elapsedStart) });
-    if (W.els.elapsedMsg.textContent !== elapsedText) W.els.elapsedMsg.textContent = elapsedText;
+    W.paintElapsedLine(W.formatElapsed(Date.now() - W.state.elapsedStart));
   }, 1000);
 };
 
@@ -325,7 +323,11 @@ W.finishProgressSuccess = function (message) {
     W.els.successMsg.innerHTML = '<span class="check" aria-hidden="true"></span>' + W.t('jailbreakSuccess');
   }
   if (W.els.nextTile) W.els.nextTile.hidden = false;
-  if (W.ui && W.ui.toast) W.ui.toast(W.t('jailbreakSuccess'), W.t('openingElf'), 'ok');
+  if (W.ui && W.ui.toast) {
+    var wantPm = (W.state.forceAutoloadName === 'pldmgr.elf')
+      || (W.state.launcherChoice === W.CHOICE_PAYLOAD_MANAGER);
+    W.ui.toast(W.t('jailbreakSuccess'), wantPm ? 'Opening Payload Manager...' : W.t('openingElf'), 'ok');
+  }
   if (W.ui && W.ui.feedback) W.ui.feedback(true);
 };
 
@@ -455,7 +457,6 @@ W.consoleLabel = function () {
   if (fw) parts.push('FW ' + fw.str);
   else parts.push('FW -');
   if (cfi) parts.push(cfi.code + ' · ' + cfi.label);
-  else parts.push(W.t ? W.t('modelAfterJb') : 'model after JB');
   return parts.join(' · ');
 };
 

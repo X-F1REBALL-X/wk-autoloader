@@ -1,10 +1,27 @@
-# Keep the GitHub language bar on the loader's own code.
-# Bundled third-party code
+# Language bar: C + JavaScript only
+*.html linguist-vendored
+*.css linguist-vendored
+*.md linguist-vendored
+*.py linguist-vendored
+*.sh linguist-vendored
+Makefile linguist-detectable=false
+Dockerfile* linguist-detectable=false
+LICENSE linguist-vendored
+*.svg linguist-vendored
+*.json linguist-vendored
+*.png linguist-vendored
+*.jpg linguist-vendored
+*.ico linguist-vendored
+*.woff linguist-vendored
+*.txt linguist-vendored
+
+# Third-party / chain trees
 frontend/autoloader/relapse/** linguist-vendored
+third_party/** linguist-vendored
 src/inflate.c linguist-vendored
 src/inflate.h linguist-vendored
-# Build files and helper scripts
-Makefile linguist-detectable=false
-build_release.sh linguist-detectable=false
-build_deps.sh linguist-detectable=false
+store/third_party/** linguist-vendored
 tools/** linguist-detectable=false
+docs/** linguist-vendored
+pc-host/** linguist-vendored
+patches/** linguist-vendored

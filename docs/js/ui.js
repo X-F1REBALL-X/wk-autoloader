@@ -3,61 +3,38 @@
 var W = g.WKAL = g.WKAL || {};
 W.ui = W.ui || {};
 
-W.ui.applyTheme = function (id) {
-  var h = document.documentElement;
-  if (!id) {
-    h.removeAttribute('data-theme');
-    h.className = (h.className || '').replace(/\bdark\b/g, '').replace(/\s+/g, ' ').trim();
-  } else {
-    h.setAttribute('data-theme', id);
-    if (id === 'gold' || id === 'black') {
-      if (!/\bdark\b/.test(h.className)) h.className = (h.className + ' dark').trim();
-    } else {
-      h.className = (h.className || '').replace(/\bdark\b/g, '').replace(/\s+/g, ' ').trim();
-    }
-  }
-  W.lsSet(W.LS_THEME_KEY, id || '');
+/* Midnight is the only theme; any stored theme value is ignored. */
+W.ui.applyTheme = function () {
+  document.documentElement.setAttribute('data-theme', 'midnight');
+  return 'midnight';
 };
 
 W.ui.bindTheme = function () {
-  var saved = W.lsGet(W.LS_THEME_KEY, '');
-  if (/^(gray|white|gold|black)$/.test(saved)) W.ui.applyTheme(saved);
-  else W.ui.applyTheme('');
-  function paintOn() {
-    var cur = W.lsGet(W.LS_THEME_KEY, '') || '';
-    var opts = document.querySelectorAll('.themeopt');
-    var i;
-    for (i = 0; i < opts.length; i++) {
-      var th = opts[i].getAttribute('data-theme') || '';
-      if (th === cur) opts[i].classList.add('on');
-      else opts[i].classList.remove('on');
-    }
-  }
-  paintOn();
-  var opts = document.querySelectorAll('.themeopt');
-  var i;
-  for (i = 0; i < opts.length; i++) {
-    opts[i].addEventListener('click', function () {
-      W.ui.applyTheme(this.getAttribute('data-theme') || '');
-      paintOn();
-    });
-  }
+  return W.ui.applyTheme();
 };
 
 W.ui.bindSettings = function () {
   var btn = document.getElementById('settingsBtn');
-  var panel = document.getElementById('settingsPanel');
-  if (!btn || !panel) return;
+  var page = document.getElementById('settingsPage');
+  var splash = document.getElementById('splash');
+  if (!btn || !page) return;
   function setOpen(open) {
-    panel.hidden = !open;
+    page.hidden = !open;
+    page.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (splash) {
+      splash.hidden = !!open;
+      splash.setAttribute('aria-hidden', open ? 'true' : 'false');
+    }
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    document.body.classList.toggle('drawer-open', open);
+    document.body.classList.toggle('settings-open', open);
+    document.body.classList.remove('drawer-open');
   }
-  btn.addEventListener('click', function () { setOpen(panel.hidden); });
+  setOpen(false);
+  btn.addEventListener('click', function () { setOpen(true); });
   var x = document.getElementById('settingsClose');
   if (x) x.addEventListener('click', function () { setOpen(false); btn.focus(); });
   document.addEventListener('keydown', function (e) {
-    if ((e.key === 'Escape' || e.keyCode === 27) && !panel.hidden) setOpen(false);
+    if ((e.key === 'Escape' || e.keyCode === 27) && !page.hidden) setOpen(false);
   });
 };
 
@@ -70,7 +47,7 @@ W.ui.toast = function (title, body, kind) {
   if (t) t.textContent = title || '';
   if (b) b.textContent = body || '';
   box.className = 'show' + (kind === 'ok' ? ' ok' : kind === 'bad' ? ' bad' : kind === 'warn' ? ' warn' : '');
-  if (s) s.textContent = kind === 'ok' ? '✓' : kind === 'warn' ? '!' : kind === 'bad' ? '!' : '•';
+  if (s) s.textContent = kind === 'ok' ? 'OK' : kind === 'warn' ? '!' : kind === 'bad' ? '!' : '*';
   clearTimeout(W.ui._toastT);
   W.ui._toastT = setTimeout(function () { box.className = ''; }, 5000);
 };
@@ -119,28 +96,43 @@ W.ui.feedback = function (ok) {
   } catch (e1) {}
 };
 
+W.ui.fmtLogTime = function (ms) {
+  var d = new Date(ms || 0);
+  function z(n) { return n < 10 ? '0' + n : String(n); }
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+};
+
 W.ui.renderHistory = function () {
   var list = W.els.historyList;
   var empty = W.els.historyEmpty;
   if (!list) return;
   var arr = W.loadHistory();
   list.innerHTML = '';
+  var clr = document.getElementById('clearLog');
+  if (clr) clr.hidden = !arr.length;
   if (!arr.length) {
     if (empty) empty.hidden = false;
     return;
   }
   if (empty) empty.hidden = true;
-  var i, e, row, left, right, cls;
-  for (i = 0; i < Math.min(arr.length, 6); i++) {
+  var i, e, row, left, when, what, right, cls, label;
+  for (i = 0; i < arr.length; i++) {
     e = arr[i];
     row = document.createElement('div');
     row.className = 'hrow';
     left = document.createElement('span');
-    left.textContent = (e.chain || '-') + (e.stage && e.stage !== 'done' && e.stage !== 'fail' ? ' · ' + e.stage : '');
+    left.className = 'hleft';
+    when = document.createElement('b');
+    when.textContent = W.ui.fmtLogTime(e.at);
+    what = document.createElement('small');
+    what.textContent = (e.chain || '-') + (e.fw && e.fw !== '-' ? ' FW ' + e.fw : '') + (e.note ? ' - ' + e.note : '');
+    left.appendChild(when);
+    left.appendChild(what);
     right = document.createElement('span');
     cls = e.result === 'ok' ? 'ok' : e.result === 'hang' ? 'hang' : 'fail';
-    right.className = cls;
-    right.textContent = (e.result === 'ok' ? 'OK' : e.result === 'hang' ? 'STALL' : 'FAIL') + ' ' + (e.duration || '');
+    label = e.result === 'ok' ? 'Success' : e.result === 'hang' ? 'Stalled' : 'Failed';
+    right.className = 'hres ' + cls;
+    right.textContent = label + ' ' + (e.duration || '');
     row.appendChild(left);
     row.appendChild(right);
     list.appendChild(row);
@@ -148,80 +140,35 @@ W.ui.renderHistory = function () {
 };
 
 W.ui.syncChainUi = function () {
-  var fw = W.detectFirmware();
-  var pref = W.getChainPref();
-  var rec = fw ? W.recommendChain(fw) : null;
-  var chip = W.els.detectChip;
-  var unsup = W.els.unsupportedMsg;
+  var pref = 'relapse';
+  try { W.setChainPref('relapse'); } catch (e) {}
+  var auto = document.getElementById('chainAuto');
+  var rel = document.getElementById('chainRelapse');
   var umtx = document.getElementById('chainUmtx2');
   var poops = document.getElementById('chainPoops');
-  var relapse = document.getElementById('chainRelapse');
-  var auto = document.getElementById('chainAuto');
-  var hint = W.els.chainHint;
-  var start = document.getElementById('startJailbreak');
-
-  /* Always show every chain with its FW range; grey out the ones that
-   * cannot run on the detected firmware (unknown FW = leave all enabled). */
-  function gate(btn, chain) {
-    if (!btn) return;
-    var ok = !fw || W.fwSupports(chain, fw);
-    btn.hidden = false;
-    btn.disabled = !ok;
-    btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
-    btn.title = ok ? '' : W.t('chainOff');
-    if (ok) btn.classList.remove('off'); else btn.classList.add('off');
+  if (auto) auto.hidden = true;
+  if (umtx) umtx.hidden = true;
+  if (poops) poops.hidden = true;
+  if (rel) {
+    rel.hidden = false;
+    rel.classList.add('on');
   }
-  gate(umtx, 'umtx2');
-  gate(relapse, 'relapse');
-  gate(poops, 'poops');
-  if (auto) { auto.hidden = false; auto.disabled = !!(fw && fw.num >= 6.0 && fw.num < 7.0); }
-
-  var opts = document.querySelectorAll('#chainRow .opt');
-  var i;
-  for (i = 0; i < opts.length; i++) {
-    var c = opts[i].getAttribute('data-chain');
-    if (c === pref) opts[i].classList.add('on');
-    else opts[i].classList.remove('on');
-  }
-
-  var unsupported = fw && fw.num >= 6.0 && fw.num < 7.0;
-  if (unsup) unsup.hidden = !unsupported;
-  if (start) start.disabled = !!unsupported || W.state.chainStarted;
-
-  if (chip) {
-    if (!fw) {
-      chip.textContent = W.t('consoleNotDetected');
-      chip.className = 'chip bad';
-    } else if (unsupported) {
-      chip.textContent = W.t('fwUnsupported', { fw: fw.str });
-      chip.className = 'chip bad';
-    } else {
-      var show = pref === 'auto' ? (rec || 'auto') : pref;
-      var cfi = W.getCachedCfi && W.getCachedCfi();
-      var modelBit = cfi ? (cfi.code + ' · ' + cfi.label) : W.t('modelAfterJb');
-      chip.textContent = W.t('fwModelChain', {
-        fw: fw.str,
-        model: modelBit,
-        chain: W.formatChainLabel(show)
-      });
-      chip.className = 'chip ok';
-      chip.title = modelBit;
-    }
-  }
-  if (hint) {
-    if (pref === 'auto' && rec) hint.textContent = W.t('chainAutoPicks', { chain: W.formatChainLabel(rec) });
-    else if (pref === 'poops') hint.textContent = W.t('chainPoopsHint');
-    else if (pref === 'relapse') hint.textContent = W.t('chainRelapseHint');
-    else if (pref === 'umtx2') hint.textContent = W.t('chainUmtx2Desc');
-    else hint.textContent = '';
-  }
-  /* Prefetch recommended chain entry for faster arm (no exploit run). */
-  if (rec) W.preloadChainFiles(rec);
+  var hint = document.getElementById('chainHint');
+  if (hint) hint.textContent = W.t('chainRelapseHint') || 'Relapse only';
 };
+
 
 W.ui.showStall = function (allowRestart) {
   var el = W.els.stallMsg;
-  if (!el) return;
+  if (W.setRunStatus) {
+    W.setRunStatus(allowRestart ? 'Taking longer than usual. Press Start to retry' : 'Taking longer than usual. Restart the console if stuck');
+  }
+  if (allowRestart) {
+    W.state.stallRestart = true;
+    var goS = document.getElementById('startJailbreak');
+    if (goS) goS.disabled = false;
+  }
+  if (!el) { W.recordRun('hang', 'No progress'); return; }
   el.hidden = false;
   el.innerHTML = '';
   var p = document.createElement('p');
@@ -240,7 +187,7 @@ W.ui.showStall = function (allowRestart) {
     p2.textContent = W.t('stallSensitive');
     el.appendChild(p2);
   }
-  W.recordRun('hang');
+  W.recordRun('hang', 'No progress');
 };
 
 W.ui.hideStall = function () {
@@ -259,9 +206,7 @@ W.ui.bindHome = function () {
   var cancel = document.getElementById('cancelAutoStart');
   var auto = document.getElementById('autoJailbreak');
   var delay = document.getElementById('startDelay');
-  var retry = document.getElementById('retryCount');
   var delayVal = document.getElementById('startDelayVal');
-  var retryVal = document.getElementById('retryCountVal');
   var sound = document.getElementById('soundToggle');
   var openOnly = document.getElementById('openLauncherOnly');
   var autoTimer = 0;
@@ -273,32 +218,29 @@ W.ui.bindHome = function () {
     n = Math.round(Math.min(5, Math.max(0.5, n)) * 2) / 2;
     return n;
   }
-  function retryN() {
-    var n = retry ? parseInt(retry.value, 10) : 1;
-    if (isNaN(n) || n < 0) n = 0;
-    if (n > 3) n = 3;
-    return n;
-  }
   function paintSliders() {
     if (delayVal) delayVal.textContent = delaySec() + 's';
-    if (retryVal) retryVal.textContent = String(retryN());
   }
 
-  /* Auto-start ON by default (first visit). */
-  var savedAuto = W.lsGet(W.LS_AUTO_KEY, '1');
-  if (auto) auto.checked = savedAuto !== '0';
+  /* Auto-start OFF by default (first visit / new key). */
+  var savedAuto = W.lsGet(W.LS_AUTO_KEY, '0');
+  if (auto) auto.checked = savedAuto === '1';
   if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delay.value = String(Math.round(Math.min(5, Math.max(0.5, dv)) * 2) / 2); }
-  if (retry) { var rv = parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10); if (isNaN(rv)) rv = 1; retry.value = String(Math.min(3, Math.max(0, rv))); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
 
+  function paintGo(label) {
+    if (!go) return;
+    go.textContent = label || 'START';
+  }
   function cancelCountdown() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = 0; }
     W.state.runStage = 'idle';
+    try { document.body.classList.remove('running'); document.body.classList.remove('countdown'); } catch (eR2) {}
     if (go && !W.state.chainStarted) {
       go.disabled = false;
       go.classList.remove('is-cancel');
-      go.textContent = W.t('startJailbreak');
+      paintGo(W.t('startJailbreak'));
     }
     if (cancel) cancel.hidden = true;
     if (W.els.countdownHint) W.els.countdownHint.textContent = '';
@@ -307,8 +249,9 @@ W.ui.bindHome = function () {
   function beginJailbreak() {
     if (W.state.chainStarted) return;
     cancelCountdown();
-    if (go) { go.disabled = true; go.classList.remove('is-cancel'); go.textContent = W.t('starting'); }
-    W.state.safeRetryLeft = retryN();
+    if (go) { go.disabled = true; go.classList.remove('is-cancel'); paintGo(W.t('starting')); }
+    W.state.safeRetryLeft = 0;
+    try { document.body.classList.remove('countdown'); document.body.classList.add('running'); } catch (eR) {}
     W.state.launcherChoice = W.CHOICE_ELF_LAUNCHER;
     W.lsSet(W.LS_LAUNCHER_KEY, W.CHOICE_ELF_LAUNCHER);
     if (W.start) W.start();
@@ -323,7 +266,8 @@ W.ui.bindHome = function () {
     if (remaining <= 0) { beginJailbreak(); return; }
     go.disabled = false;
     go.classList.add('is-cancel');
-    go.textContent = W.t('cancel') + ' · ' + remaining;
+    try { document.body.classList.add('countdown'); } catch (eCd) {}
+    paintGo(W.t('cancel') + ' - ' + remaining);
     if (cancel) cancel.hidden = true;
     if (W.els.countdownHint) W.els.countdownHint.textContent = '';
     autoTimer = setInterval(function () {
@@ -334,7 +278,7 @@ W.ui.bindHome = function () {
         beginJailbreak();
         return;
       }
-      go.textContent = W.t('cancel') + ' · ' + remaining;
+      paintGo(W.t('cancel') + ' - ' + remaining);
     }, 500);
   }
 
@@ -347,24 +291,29 @@ W.ui.bindHome = function () {
     });
   }
   if (auto) auto.addEventListener('change', function () {
+    /* Save only. Auto-start runs once at page load, never when the box is ticked. */
     W.lsSet(W.LS_AUTO_KEY, auto.checked ? '1' : '0');
-    if (auto.checked) startCountdown();
-    else cancelCountdown();
+    if (!auto.checked) cancelCountdown();
   });
   if (delay) delay.addEventListener('input', function () {
     W.lsSet(W.LS_DELAY_KEY, String(delaySec()));
     paintSliders();
   });
-  if (retry) retry.addEventListener('input', function () {
-    W.lsSet(W.LS_RETRY_KEY, String(retryN()));
-    paintSliders();
-  });
   if (sound) sound.addEventListener('change', function () {
     W.lsSet(W.LS_SOUND_KEY, sound.checked ? '1' : '0');
   });
+  var clearBtn = document.getElementById('clearLog');
+  if (clearBtn) clearBtn.addEventListener('click', function () { if (W.clearHistory) W.clearHistory(); });
   if (cancel) cancel.addEventListener('click', cancelCountdown);
   if (go) go.addEventListener('click', function () {
-    if (W.state.chainStarted) return;
+    if (W.state.chainStarted) {
+      /* v13: after a failed run Start reloads the page for a clean new attempt. No cancel mid-run. */
+      if (W.state.runStage === 'fail' || W.state.stallRestart) {
+        try { sessionStorage.setItem('ignikey_start_now', '1'); } catch (eSs) {}
+        try { location.reload(); } catch (eRl) {}
+      }
+      return;
+    }
     /* Same button: Start -> Cancel during countdown -> Start. */
     if (autoTimer) { cancelCountdown(); return; }
     startCountdown();
@@ -385,7 +334,10 @@ W.ui.bindHome = function () {
     });
   }
 
-  if (auto && auto.checked) startCountdown();
+  var startNow = false;
+  try { startNow = sessionStorage.getItem('ignikey_start_now') === '1'; sessionStorage.removeItem('ignikey_start_now'); } catch (eSn) {}
+  if (startNow) setTimeout(beginJailbreak, 400);
+  else if (auto && auto.checked) startCountdown();
 
   W.ui._cancelCountdown = cancelCountdown;
   W.ui._startCountdown = startCountdown;

@@ -55,14 +55,7 @@ W.selfupd = W.selfupd || {};
   }
 
   function setSelfUpdateDir(box) {
-    var info = null;
-    try {
-      if (window.WKAL_I18N && window.WKAL_I18N.langInfo) {
-        info = window.WKAL_I18N.langInfo(window.WKAL_I18N.getLang());
-      }
-    } catch (e) { }
-    if (info && info.rtl) box.setAttribute('dir', 'rtl');
-    else box.removeAttribute('dir');
+    box.removeAttribute('dir');
   }
 
   function paintSelfUpdateBanner() {

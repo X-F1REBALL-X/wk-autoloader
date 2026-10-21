@@ -70,7 +70,7 @@ W.ui.toast = function (title, body, kind) {
   if (t) t.textContent = title || '';
   if (b) b.textContent = body || '';
   box.className = 'show' + (kind === 'ok' ? ' ok' : kind === 'bad' ? ' bad' : kind === 'warn' ? ' warn' : '');
-  if (s) s.textContent = kind === 'ok' ? '✓' : kind === 'warn' ? '!' : kind === 'bad' ? '!' : '•';
+  if (s) { if (kind === 'ok') s.innerHTML = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.12em"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; else s.textContent = (kind === 'warn' || kind === 'bad') ? '!' : '\u2022'; }
   clearTimeout(W.ui._toastT);
   W.ui._toastT = setTimeout(function () { box.className = ''; }, 5000);
 };
@@ -171,10 +171,11 @@ W.ui.syncChainUi = function () {
     btn.title = ok ? '' : W.t('chainOff');
     if (ok) btn.classList.remove('off'); else btn.classList.add('off');
   }
-  gate(umtx, 'umtx2');
+  /* umtx2 / Poops removed from UI; never show. */
+  if (umtx) { umtx.hidden = true; umtx.disabled = true; }
   gate(relapse, 'relapse');
-  gate(poops, 'poops');
-  if (auto) { auto.hidden = false; auto.disabled = !!(fw && fw.num >= 6.0 && fw.num < 7.0); }
+  if (poops) { poops.hidden = true; poops.disabled = true; }
+  if (auto) { auto.hidden = true; auto.disabled = true; }
 
   var opts = document.querySelectorAll('#chainRow .opt');
   var i;
@@ -198,14 +199,21 @@ W.ui.syncChainUi = function () {
     } else {
       var show = pref === 'auto' ? (rec || 'auto') : pref;
       var cfi = W.getCachedCfi && W.getCachedCfi();
-      var modelBit = cfi ? (cfi.code + ' · ' + cfi.label) : W.t('modelAfterJb');
-      chip.textContent = W.t('fwModelChain', {
-        fw: fw.str,
-        model: modelBit,
-        chain: W.formatChainLabel(show)
-      });
+      if (cfi) {
+        chip.textContent = W.t('fwModelChain', {
+          fw: fw.str,
+          model: cfi.code + ' · ' + cfi.label,
+          chain: W.formatChainLabel(show)
+        });
+        chip.title = cfi.code + ' · ' + cfi.label;
+      } else {
+        chip.textContent = W.t('fwChain', {
+          fw: fw.str,
+          chain: W.formatChainLabel(show)
+        });
+        chip.title = '';
+      }
       chip.className = 'chip ok';
-      chip.title = modelBit;
     }
   }
   if (hint) {
@@ -268,10 +276,8 @@ W.ui.bindHome = function () {
   var remaining = 0;
 
   function delaySec() {
-    var n = delay ? parseFloat(delay.value) : 3;
-    if (isNaN(n)) n = 3;
-    n = Math.round(Math.min(5, Math.max(0.5, n)) * 2) / 2;
-    return n;
+    /* v21: no start delay - Auto-start fires immediately. */
+    return 0;
   }
   function retryN() {
     var n = retry ? parseInt(retry.value, 10) : 1;
@@ -309,8 +315,7 @@ W.ui.bindHome = function () {
     cancelCountdown();
     if (go) { go.disabled = true; go.classList.remove('is-cancel'); go.textContent = W.t('starting'); }
     W.state.safeRetryLeft = retryN();
-    W.state.launcherChoice = W.CHOICE_ELF_LAUNCHER;
-    W.lsSet(W.LS_LAUNCHER_KEY, W.CHOICE_ELF_LAUNCHER);
+    W.state.launcherChoice = W.getLauncherChoice ? W.getLauncherChoice() : W.CHOICE_ELF_LAUNCHER;
     if (W.start) W.start();
   }
 
@@ -342,7 +347,7 @@ W.ui.bindHome = function () {
   var i;
   for (i = 0; i < chainBtns.length; i++) {
     chainBtns[i].addEventListener('click', function () {
-      W.setChainPref(this.getAttribute('data-chain') || 'auto');
+      W.setChainPref('relapse');
       W.ui.syncChainUi();
     });
   }
@@ -351,27 +356,55 @@ W.ui.bindHome = function () {
     if (auto.checked) startCountdown();
     else cancelCountdown();
   });
-  if (delay) delay.addEventListener('input', function () {
+  function onDelayMove() {
     W.lsSet(W.LS_DELAY_KEY, String(delaySec()));
     paintSliders();
-  });
-  if (retry) retry.addEventListener('input', function () {
+  }
+  function onRetryMove() {
     W.lsSet(W.LS_RETRY_KEY, String(retryN()));
     paintSliders();
-  });
+  }
+  if (delay) {
+    delay.addEventListener('input', onDelayMove);
+    delay.addEventListener('change', onDelayMove);
+    delay.addEventListener('mousemove', onDelayMove);
+    delay.addEventListener('touchmove', onDelayMove);
+  }
+  if (retry) {
+    retry.addEventListener('input', onRetryMove);
+    retry.addEventListener('change', onRetryMove);
+    retry.addEventListener('mousemove', onRetryMove);
+    retry.addEventListener('touchmove', onRetryMove);
+  }
   if (sound) sound.addEventListener('change', function () {
     W.lsSet(W.LS_SOUND_KEY, sound.checked ? '1' : '0');
   });
   if (cancel) cancel.addEventListener('click', cancelCountdown);
-  if (go) go.addEventListener('click', function () {
-    if (W.state.chainStarted) return;
-    /* Same button: Start -> Cancel during countdown -> Start. */
-    if (autoTimer) { cancelCountdown(); return; }
-    startCountdown();
-  });
-  if (openOnly) openOnly.addEventListener('click', function () {
-    if (W.launcher && W.launcher.openNow) W.launcher.openNow();
-  });
+  if (go) {
+    var goLock = 0;
+    function onGo(e) {
+      if (goLock) return;
+      goLock = 1;
+      setTimeout(function () { goLock = 0; }, 400);
+      if (e) {
+        try { e.preventDefault(); } catch (e0) {}
+        try { e.stopPropagation(); } catch (e1) {}
+      }
+      if (W.state.chainStarted) return;
+      /* Same button: Start -> Cancel during countdown -> Start. */
+      if (autoTimer) { cancelCountdown(); return; }
+      startCountdown();
+    }
+    /* Click only: mousedown+click both fired onGo and cancelled the countdown. */
+    go.onclick = onGo;
+    go.onmousedown = null;
+    go.ontouchend = null;
+  }
+  if (openOnly) {
+    openOnly.onclick = function () {
+      if (W.launcher && W.launcher.openNow) W.launcher.openNow();
+    };
+  }
 
   if (W.detectCfiPreJb) W.detectCfiPreJb();
   W.ui.syncChainUi();
@@ -389,5 +422,59 @@ W.ui.bindHome = function () {
 
   W.ui._cancelCountdown = cancelCountdown;
   W.ui._startCountdown = startCountdown;
+};
+
+W.ui.applyLauncherChoice = function (choice) {
+  var isPm = choice === W.CHOICE_PAYLOAD_MANAGER;
+  var pickElf = document.getElementById('pickElf');
+  var pickPm = document.getElementById('pickPm');
+  var sub = document.getElementById('homeSubShort');
+  var heroIco = document.getElementById('heroIco');
+  if (pickElf) {
+    if (isPm) pickElf.classList.remove('on');
+    else pickElf.classList.add('on');
+  }
+  if (pickPm) {
+    if (isPm) pickPm.classList.add('on');
+    else pickPm.classList.remove('on');
+  }
+  if (sub) {
+    if (isPm) {
+      sub.removeAttribute('data-i18n');
+      sub.textContent = (W.t('afterJb') || 'After jailbreak, open') + ' ' + (W.t('payloadManager') || 'Payload Manager');
+    } else {
+      sub.setAttribute('data-i18n', 'homeSubShort');
+      sub.textContent = W.t('homeSubShort') || 'Then opens Elf Launcher';
+    }
+  }
+  if (heroIco) heroIco.src = 'elf-launcher-icon.png';
+  var oo = document.getElementById('openLauncherOnly');
+  if (oo && !isPm) {
+    /* keep existing probe-driven visibility for Elf Launcher */
+  } else if (oo && isPm) {
+    oo.hidden = true;
+  }
+};
+
+W.ui.bindLauncherChoice = function () {
+  var pickElf = document.getElementById('pickElf');
+  var pickPm = document.getElementById('pickPm');
+  function bind(el, choice) {
+    if (!el) return;
+    function pick(e) {
+      if (e) {
+        try { e.preventDefault(); } catch (e0) {}
+        try { e.stopPropagation(); } catch (e1) {}
+      }
+      W.setLauncherChoice(choice);
+    }
+    /* Click only: mousedown+click double-fires on PS5 WebKit. */
+    el.onclick = pick;
+    el.onmousedown = null;
+    el.ontouchend = null;
+  }
+  bind(pickElf, W.CHOICE_ELF_LAUNCHER);
+  bind(pickPm, W.CHOICE_PAYLOAD_MANAGER);
+  W.ui.applyLauncherChoice(W.getLauncherChoice());
 };
 })(typeof window !== 'undefined' ? window : this);

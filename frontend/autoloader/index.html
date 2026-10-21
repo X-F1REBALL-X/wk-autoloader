@@ -18,57 +18,48 @@
       <div class="logo"><img src="logo.png" alt="" width="46" height="46" /></div>
       <div class="brand">
         <h1>WK <b>Autoloader</b></h1>
-        <div class="meta"><span class="ver" id="appVer">v[[VERSION_PLACEHOLDER]]</span></div>
+        <div class="meta"><span class="ver" id="appVer">v1.0.0</span></div>
       </div>
       <div class="spacer"></div>
       <span class="chip" id="detectChip" data-i18n="detecting">Detecting…</span>
-      <div id="langbox">
-        <button type="button" id="langbtn" aria-haspopup="true"><span class="flag" id="langflag"></span><span data-i18n="language">Language</span></button>
-        <div id="langlist" role="menu" data-state="closed"></div>
-      </div>
     </header>
 
     <div id="splash" aria-hidden="false">
       <main class="main">
-        <section class="hero card" id="homeCard">
-          <img class="hero-ico" src="elf-launcher-icon.png" width="72" height="72" alt="" />
-          <h2 class="h" data-i18n="startJailbreakTitle">Start jailbreak</h2>
-          <p class="sub" data-i18n="homeSubShort">Then opens Elf Launcher</p>
-
+        <section class="hero card home-panel" id="homeCard">
+          <div class="home-deco" aria-hidden="true">
+            <img class="home-ico" src="store-tile-icon.png" width="64" height="64" alt="">
+            <div class="home-title">WK Autoloader</div>
+            <div class="home-div"><i></i><s>&#9829;</s><i></i></div>
+          </div>
+          <p class="label" data-i18n="startJailbreakTitle">Start jailbreak</p>
+          <p class="label slim" data-i18n="afterJb" hidden>After jailbreak, open</p>
+          <div class="choice-row" id="launcherChoice" role="group" aria-label="Launcher" hidden>
+            <button type="button" class="choice on" id="pickElf" data-choice="elf-launcher" hidden>
+              <span data-i18n="elfLauncher">Elf Launcher</span>
+            </button>
+          </div>
           <div class="startrow">
             <button type="button" id="startJailbreak" class="go" data-i18n="startJailbreak">Start</button>
           </div>
           <button type="button" id="openLauncherOnly" class="ghost" data-i18n="openLauncherOnly" hidden>Open Elf Launcher</button>
           <p class="hint" id="countdownHint"></p>
-          <p class="fwline" data-i18n="supportedFw">Supported firmware: 1.00–5.50, 7.00–13.60 · 6.xx not supported</p>
           <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
         </section>
 
         <section class="settings card" id="settingsPanel">
-          <p class="label" data-i18n="settings">Settings</p>
+          <p class="label" data-i18n="settings">Options</p>
 
           <p class="label slim" data-i18n="chainTitle">Chain</p>
           <div class="chips" id="chainRow" role="group" aria-label="Exploit chain">
-            <button type="button" class="opt" id="chainAuto" data-chain="auto"><span class="t" data-i18n="chainAuto">Auto</span><span class="tag" data-i18n="recommended">Best</span></button>
-            <button type="button" class="opt" id="chainUmtx2" data-chain="umtx2"><span class="t">umtx2</span><span class="d">FW 1.00–5.50</span></button>
-            <button type="button" class="opt" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span><span class="d">FW 7.00–13.60</span></button>
-            <button type="button" class="opt" id="chainPoops" data-chain="poops"><span class="t">Poops</span><span class="d">FW 7.00–12.00</span></button>
+            <button type="button" class="opt on" id="chainRelapse" data-chain="relapse"><span class="t">Relapse</span><span class="d">FW 7.00–13.60</span></button>
           </div>
           <p class="hint" id="chainHint"></p>
 
           <p class="label slim" data-i18n="timingTitle">Timing</p>
           <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start</span></label>
-          <label class="field" for="startDelay"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0.5" max="5" step="0.5" value="3" /><b id="startDelayVal">3s</b></label>
-          <label class="field" for="retryCount"><span data-i18n="retryCount">Retries</span><input type="range" id="retryCount" min="0" max="3" step="1" value="1" /><b id="retryCountVal">1</b></label>
+          <label class="field" for="startDelay" hidden style="display:none"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0" max="5" step="0.5" value="0" /><b id="startDelayVal">0s</b></label>
 
-          <p class="label slim" data-i18n="theme">Theme</p>
-          <div id="themebox" class="theme-row">
-            <button type="button" class="themeopt" data-theme="" data-i18n="themeLight">Light</button>
-            <button type="button" class="themeopt" data-theme="gold" data-i18n="themeGold">Gold</button>
-            <button type="button" class="themeopt" data-theme="black" data-i18n="themeBlack">Black</button>
-            <button type="button" class="themeopt" data-theme="gray" data-i18n="themeGray">Gray</button>
-            <button type="button" class="themeopt" data-theme="white" data-i18n="themeWhite">White</button>
-          </div>
 
           <p class="label slim" data-i18n="historyTitle">Recent</p>
           <div id="historyList" class="history"></div>
@@ -91,8 +82,8 @@
         <div id="stallMsg" class="stall" hidden></div>
         <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
         <div id="nextTile" class="next" hidden>
-          <img src="elf-launcher-icon.png" width="56" height="56" alt="" />
-          <div><p class="n" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d">http://127.0.0.1:1000</p></div>
+          <img id="nextTileIco" src="elf-launcher-icon.png" width="56" height="56" alt="" />
+          <div><p class="n" id="nextTileTitle" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d" id="nextTileUrl">http://127.0.0.1:1000</p></div>
         </div>
         <div id="logWrapper" hidden><div id="logContainer"></div></div>
         <div id="p2jbStats" hidden>

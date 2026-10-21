@@ -170,7 +170,7 @@ export async function sendAutoloadElf(name, payloadDir, p, chain, log) {
 }
 
 export async function loadOptionalPayloads(p, chain, log) {
-  /* WK Autoloader must not autoload unrelated payloads. Companion page
+  /* IgniKey must not autoload unrelated payloads. Companion page
      install happens only via wkal-companions.elf / sendAutoloadElf. */
   log("optional payloads disabled - WK installs Elf Launcher and Payload Manager pages only");
 }

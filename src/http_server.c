@@ -17,6 +17,10 @@
 #include "file_registry.h"
 #include "inflate.h"
 #include "app_installer.h"
+#ifdef IGNIKEY_STORE
+#include "store_remap.h"
+#include "store_installer_page.h"
+#endif
 
 /* CORS is intentionally `*`: the installer page is also served from the PC
  * host (manuals.playstation.net over HTTPS), which cross-origin XHRs this
@@ -101,7 +105,12 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
          * homescreen app is only installed/updated now - never on startup -
          * so a shortcut is never created for a partial cache. On failure the
          * server stays up and the page tells the user to re-run the installer. */
+#ifdef IGNIKEY_STORE
+        /* Store build: remap NPXS40047 to TILE_URL instead of a homescreen app. */
+        int err = store_remap_apply() < 0 ? -1 : 0;
+#else
         int err = wkali_install_app();
+#endif
         if (err == 0) {
             /* Keep :1022 up so installer-page can navigate to /app/index.html
              * and the home-icon deeplink works while this ELF is resident.
@@ -158,6 +167,22 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
             const char *oom = "500 Internal Server Error\n";
             resp = MHD_create_response_from_buffer(strlen(oom), (void *)oom, MHD_RESPMEM_PERSISTENT);
         }
+#ifdef IGNIKEY_STORE
+    } else if (strcmp(url, "/") == 0 || strcmp(url, "/index.html") == 0 ||
+               strcmp(url, "/ignikey.html") == 0 ||
+               strncmp(url, "/index.html?", 12) == 0) {
+        resp = MHD_create_response_from_buffer(sizeof(STORE_INSTALLER_PAGE) - 1,
+                                               (void *)STORE_INSTALLER_PAGE,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
+        MHD_add_response_header(resp, "Cache-Control", "no-cache, no-store, must-revalidate");
+    } else if (strncmp(url, "/cache-fill.html", 16) == 0) {
+        resp = MHD_create_response_from_buffer(sizeof(STORE_CACHE_FILL_PAGE) - 1,
+                                               (void *)STORE_CACHE_FILL_PAGE,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
+        MHD_add_response_header(resp, "Cache-Control", "no-cache");
+#endif
     } else {
         const FileEntry *entry = registry_lookup(url);
         if (entry) {
@@ -243,7 +268,7 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
                         memcpy(line, src, copy_len);
                         line[copy_len] = '\0';
                         
-                        /* Keep only the chain this FW will use — downloading
+                        /* Keep only the chain this FW will use - downloading
                            unused trees stalls AppCache near 97% on PS5 WebKit. */
                         int keep = 1;
                         if (strcmp(WKALI_FORCE_EXPLOIT, "umtx2") == 0) {

@@ -28,8 +28,6 @@ W.state = {
   elapsedStart: 0,
   launcherHttpOpenStarted: false,
   elfHttpAlreadyUp: false,
-  elMirrorFirst: false,  /* boot sends console mirror EL, bundled only as fallback */
-  elRefreshRan: false,
   launcherChoice: 'elf-launcher',
   exploitMode: null,
   EXPLOIT_URL: '',
@@ -45,8 +43,6 @@ W.state = {
   selfUpdateMsgTimer: 0,
   stallTimer: 0,
   lastProgressAt: 0,
-  progressPaused: false, /* true during Relapse kernel: no 50ms creep / ring thrash */
-  progressKernelQuiet: false,
   runStage: 'idle', /* idle|countdown|early|armed|done|fail */
   safeRetryLeft: 0,
   historyPrefer: null
@@ -57,23 +53,22 @@ W.LS_LAUNCHER_KEY = 'wkal_postjb_launcher';
 W.LS_ELFLAUNCHER_SHA = 'wkal_elflauncher_sha';
 W.LS_ELFLAUNCHER_VER = 'wkal_elflauncher_ver';
 W.LS_CHAIN_KEY = 'wkal_chain_pref';
-W.LS_AUTO_KEY = 'wkal_auto_jb';
+W.LS_AUTO_KEY = 'ignikey-auto-v34';
 W.LS_DELAY_KEY = 'wkal_start_delay';
 W.LS_RETRY_KEY = 'wkal_safe_retries';
-W.LS_THEME_KEY = 'wkal-theme';
 W.LS_SOUND_KEY = 'wkal_sound';
 W.LS_HISTORY_KEY = 'wkal_jb_history';
 W.CHOICE_ELF_LAUNCHER = 'elf-launcher';
 W.BUNDLED_ELFLAUNCHER_SHA = '1b4494e669ef07525c77036777d36a20f1eb81a708fe8262b26ffffa9452f547';
-W.BUNDLED_ELFLAUNCHER_VER = '2.0.5';
+W.BUNDLED_ELFLAUNCHER_VER = 'tip';
 W.CONSOLE_MIRROR_URI = 'file:///data/elf-launcher/mirror/elf-launcher.elf';
 W.STALL_MS = 18000;
 
-W.UMTX2_FIRMWARES = ["1.00","1.01","1.02","1.05","1.10","1.11","1.12","1.13","1.14","2.00","2.20","2.25","2.26","2.30","2.50","2.70","3.00","3.10","3.20","3.21","4.00","4.02","4.03","4.50","4.51","5.00","5.02","5.10","5.50"];
-W.P2JB_FIRMWARES = ["12.02","12.20","12.40","12.60","12.70"];
+W.UMTX2_FIRMWARES = [];
+W._UMTX2_FIRMWARES_REMOVED = ["1.00","1.01","1.02","1.05","1.10","1.11","1.12","1.13","1.14","2.00","2.20","2.25","2.26","2.30","2.50","2.70","3.00","3.10","3.20","3.21","4.00","4.02","4.03","4.50","4.51","5.00","5.02","5.10","5.50"];
+W.P2JB_FIRMWARES = [];
 W.RELAPSE_FIRMWARES = ["7.00","7.01","7.20","7.40","7.60","7.61","8.00","8.20","8.40","8.60","9.00","9.20","9.40","9.60","10.00","10.01","10.20","10.40","10.60","11.00","11.20","11.60","12.00","12.02","12.20","12.40","12.60","12.70","13.00","13.20","13.40","13.42","13.60"];
-/* Poops range 7.00-12.00 inclusive. Optional alt to Relapse; Relapse stays default. */
-W.POOPS_FIRMWARES = ["7.00","7.01","7.20","7.40","7.60","7.61","8.00","8.20","8.40","8.60","9.00","9.20","9.40","9.60","10.00","10.01","10.20","10.40","10.60","11.00","11.20","11.60","12.00"];
+W.POOPS_FIRMWARES = [];
 
 W.EXPLOIT_MODE = '[[EXPLOIT_MODE]]';
 if (W.EXPLOIT_MODE.indexOf('[[') === 0) W.EXPLOIT_MODE = 'auto';
@@ -89,6 +84,8 @@ W.bindEls = function () {
   W.els.statusMsg = d.getElementById('statusMsg');
   W.els.metaMsg = d.getElementById('metaMsg');
   W.els.elapsedMsg = d.getElementById('elapsedMsg');
+  W.els.homeElapsed = d.getElementById('homeElapsed');
+  W.els.cancelJailbreak = d.getElementById('cancelJailbreak');
   W.els.failMsg = d.getElementById('failMsg');
   W.els.successMsg = d.getElementById('successMsg');
   W.els.exploit = d.getElementById('exploit');
@@ -114,7 +111,9 @@ W.formatElapsed = function (ms) {
   var s = Math.floor(ms / 1000);
   var m = Math.floor(s / 60);
   s = s % 60;
-  return m + ':' + (s < 10 ? '0' : '') + s;
+  var mm = (m < 10 ? '0' : '') + m;
+  var ss = (s < 10 ? '0' : '') + s;
+  return mm + ':' + ss;
 };
 
 W.lsGet = function (k, d) {
@@ -146,6 +145,49 @@ W.touchProgress = function () {
   if (W.ui && W.ui.hideStall) W.ui.hideStall();
 };
 
+W.setRunStatus = function (text) {
+  var el = document.getElementById('runStatus');
+  if (!el) return;
+  el.hidden = !text;
+  if (el.textContent !== text) el.textContent = text || '';
+};
+
+W.setBodyState = function (cls) {
+  try {
+    var b = document.body;
+    b.classList.remove('running'); b.classList.remove('done'); b.classList.remove('fail');
+    b.classList.add(cls);
+    var go = document.getElementById('startJailbreak');
+    if (go) {
+      go.__runSpans = null; go.__labSpan = null; go.classList.remove('is-cancel');
+      if (cls === 'fail') { go.disabled = false; go.textContent = 'START'; W.setRunStatus('Failed. Press Start to try again'); }
+      else if (cls === 'done') { go.textContent = '100%'; W.setRunStatus('Done'); }
+    }
+  } catch (e) {}
+};
+
+/* v34: like v13, center button shows progress (+ timer) while a chain runs. No Cancel mid-run. */
+W.paintGoRun = function (pct, t) {
+  var go = document.getElementById('startJailbreak');
+  if (!go) return;
+  if (document.body.classList.contains('done') || document.body.classList.contains('fail')) return;
+  if (pct != null) W.state.goPct = pct;
+  if (t != null) W.state.goTime = t;
+  go.disabled = true;
+  go.classList.remove('is-cancel');
+  if (!go.__runSpans || go.__runSpans.parentNode !== go) {
+    go.textContent = '';
+    var a = document.createElement('span'); a.className = 'go-pct';
+    var b = document.createElement('span'); b.className = 'go-time';
+    go.appendChild(a); go.appendChild(b);
+    go.__runSpans = b; go.__labSpan = a;
+  }
+  var pl = (W.state.goPct != null ? W.state.goPct : 0) + '%';
+  if (go.__labSpan.textContent !== pl) go.__labSpan.textContent = pl;
+  var tl = W.state.goTime || '00:00';
+  if (go.__runSpans.textContent !== tl) go.__runSpans.textContent = tl;
+};
+
 W.applyProgressVisual = function (display, message) {
   if (display < 0) display = 0;
   if (display > 100) display = 100;
@@ -164,6 +206,11 @@ W.applyProgressVisual = function (display, message) {
     var pctText = Math.floor(display + 1e-6) + '%';
     if (pctEl.textContent !== pctText) pctEl.textContent = pctText;
   }
+  var goBtn = document.getElementById('startJailbreak');
+  if (goBtn && W.state.chainStarted && W.state.runStage !== 'fail') {
+    W.paintGoRun(Math.floor(display + 1e-6), null);
+    W.setRunStatus(display < 25 ? 'Starting' : display < 60 ? 'Working' : display < 90 ? 'Still working' : 'Almost done');
+  }
   var ring = W.els.progressRing;
   if (ring) {
     var deg = Math.round(display * 3.6);
@@ -179,7 +226,7 @@ W.applyProgressVisual = function (display, message) {
   }
 };
 
-W.updateProgress = function (percent, message, snap) {
+W.updateProgress = function (percent, message) {
   percent = Math.max(0, Math.min(100, +percent));
   if (!W.state.progressDone && percent < W.state.progressPct && percent !== 0) {
   } else {
@@ -189,64 +236,26 @@ W.updateProgress = function (percent, message, snap) {
   if (W.state.progressDisplay > W.state.progressPct) {
     W.state.progressDisplay = W.state.progressPct;
   }
-  /* snap=true (real mirror floors / success): paint % immediately.
-     Soft path keeps the old ease when the 50ms driver is running. */
-  if (snap || percent >= 100) {
-    W.state.progressDisplay = W.state.progressPct;
-    W.applyProgressVisual(W.state.progressPct, message);
-  } else {
-    W.applyProgressVisual(
-      W.state.progressDisplay < W.state.progressPct
-        ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
-        : W.state.progressPct,
-      message
-    );
-  }
+  W.applyProgressVisual(
+    W.state.progressDisplay < W.state.progressPct
+      ? W.state.progressDisplay + (W.state.progressPct - W.state.progressDisplay) * 0.35
+      : W.state.progressPct,
+    message
+  );
   if (W.state.progressPct >= 100 && W.state.progressDisplay >= 99.2) {
     W.applyProgressVisual(100, message);
     W.state.progressDone = true;
-    try { document.body.className = 'done'; } catch (e) {}
+    W.setBodyState('done');
     if (W.els.statusMsg) W.els.statusMsg.style.display = 'none';
   }
 };
 
 W.bumpProgressFloor = function (floor) {
   if (W.state.progressDone) return;
-  if (floor > W.state.progressPct) {
-    /* Real floor: snap the visible bar/ring immediately. Do not depend on the
-       50ms driver (paused during Relapse kernel quiet). Stay quiet if already. */
-    W.updateProgress(floor, null, true);
-  }
-};
-
-W.pauseProgressDriver = function () {
-  W.state.progressPaused = true;
-  if (W.state.progressTimer) {
-    clearInterval(W.state.progressTimer);
-    W.state.progressTimer = 0;
-  }
-};
-
-W.resumeProgressDriver = function () {
-  W.state.progressPaused = false;
-  W.startProgressDriver();
-};
-
-W.enterKernelQuiet = function () {
-  /* Relapse kernel stage: stop 50ms creep + conic-gradient thrash on #progressRing. */
-  if (W.state.progressKernelQuiet) return;
-  W.state.progressKernelQuiet = true;
-  W.pauseProgressDriver();
-};
-
-W.leaveKernelQuiet = function () {
-  if (!W.state.progressKernelQuiet) return;
-  W.state.progressKernelQuiet = false;
-  if (!W.state.progressDone) W.resumeProgressDriver();
+  if (floor > W.state.progressPct) W.updateProgress(floor);
 };
 
 W.startProgressDriver = function () {
-  if (W.state.progressPaused || W.state.progressKernelQuiet) return;
   if (W.state.progressTimer) return;
   W.state.progressTimer = setInterval(function () {
     if (W.state.progressDone) {
@@ -254,18 +263,7 @@ W.startProgressDriver = function () {
       W.state.progressTimer = 0;
       return;
     }
-    if (W.state.progressPaused || W.state.progressKernelQuiet) {
-      clearInterval(W.state.progressTimer);
-      W.state.progressTimer = 0;
-      return;
-    }
-    /* Creep the target, then ease the visible bar/ring toward it so it never sits still.
-       Fake creep must NOT call touchProgress - only real updateProgress/mirror bumps do. */
-    if (W.state.progressPct < 94) {
-      var next = W.state.progressPct + Math.max(0.4, (94 - W.state.progressPct) * 0.045);
-      if (next > 94) next = 94;
-      W.state.progressPct = next;
-    }
+    /* Ease the visible bar/ring toward progressPct only; pct advances via real events. */
     var disp = W.state.progressDisplay || 0;
     var tgt = W.state.progressPct;
     if (disp < tgt) disp += (tgt - disp) * 0.2;
@@ -280,21 +278,67 @@ W.stopElapsed = function () {
     clearInterval(W.state.elapsedTimer);
     W.state.elapsedTimer = 0;
   }
+  if (W.els.homeElapsed) W.els.homeElapsed.hidden = true;
+  if (W.els.cancelJailbreak) W.els.cancelJailbreak.hidden = true;
+};
+
+/* Stop chain timers + iframe and return home. */
+W.cancelJailbreak = function () {
+  try { if (W.ui && W.ui._cancelCountdown) W.ui._cancelCountdown(); } catch (e0) {}
+  W.stopElapsed();
+  if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
+  if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
+  if (W.state.mirrorTimer) { clearInterval(W.state.mirrorTimer); W.state.mirrorTimer = 0; }
+  if (W.state.elfldrFinishTimer) { clearTimeout(W.state.elfldrFinishTimer); W.state.elfldrFinishTimer = 0; }
+  try { if (W.els.exploit) W.els.exploit.src = 'about:blank'; } catch (e1) {}
+  W.state.chainStarted = false;
+  W.state.progressDone = false;
+  W.state.progressPct = 0;
+  W.state.progressDisplay = 0;
+  W.state.finished = false;
+  W.state.autoloadPending = false;
+  W.state.stallRestart = false;
+  W.state.runStage = 'idle';
+  try {
+    document.body.classList.remove('running');
+    document.body.classList.remove('done');
+    document.body.classList.remove('fail');
+  } catch (e2) {}
+  if (W.els.loader) W.els.loader.hidden = true;
+  var go = document.getElementById('startJailbreak');
+  if (go) {
+    go.disabled = false;
+    go.classList.remove('is-cancel');
+    go.__runSpans = null; go.__labSpan = null;
+    W.state.goPct = null; W.state.goTime = null;
+    go.textContent = W.t('startJailbreak') || 'START';
+  }
+  if (W.setRunStatus) W.setRunStatus('');
+  if (W.els.homeElapsed) { W.els.homeElapsed.hidden = true; W.els.homeElapsed.textContent = '00:00'; }
+  if (W.els.cancelJailbreak) W.els.cancelJailbreak.hidden = true;
+  if (W.els.countdownHint) W.els.countdownHint.textContent = '';
+  W.uiLog(W.t('cancel') || 'Cancel', 'info');
 };
 
 W.startElapsed = function () {
   if (W.state.elapsedTimer) return;
   W.state.elapsedStart = Date.now();
-  if (W.els.elapsedMsg) W.els.elapsedMsg.textContent = W.t('elapsed', { t: '0:00' });
+  /* v34: % + timer on the center button (no Cancel during run, like v13). */
+  function paintElapsed(t) {
+    var elapsedText = W.t('elapsed', { t: t });
+    if (W.els.elapsedMsg && W.els.elapsedMsg.textContent !== elapsedText) W.els.elapsedMsg.textContent = elapsedText;
+    if (W.els.homeElapsed) W.els.homeElapsed.hidden = true;
+    W.paintGoRun(null, t);
+  }
+  paintElapsed('00:00');
+  if (W.els.cancelJailbreak) W.els.cancelJailbreak.hidden = true;
   W.state.elapsedTimer = setInterval(function () {
-    if (!W.els.elapsedMsg) return;
-    var elapsedText = W.t('elapsed', { t: W.formatElapsed(Date.now() - W.state.elapsedStart) });
-    if (W.els.elapsedMsg.textContent !== elapsedText) W.els.elapsedMsg.textContent = elapsedText;
+    paintElapsed(W.formatElapsed(Date.now() - W.state.elapsedStart));
   }, 1000);
 };
 
 W.formatChainLabel = function (chain) {
-  if (chain === 'relapse' || chain === 'umtx2' || chain === 'poops' || chain === 'p2jb') return chain;
+  if (chain === 'relapse') return chain;
   return chain || '-';
 };
 
@@ -307,20 +351,24 @@ W.setMeta = function (fwStr, chain) {
   W.els.metaMsg.textContent = W.t('metaFwChain', { fw: fwStr || '-', chain: W.formatChainLabel(chain) });
 };
 
-W.finishProgressSuccess = function (message) {
+W.finishProgressSuccess = function /*v26*/ (message) {
   W.state.progressDone = true;
   W.state.runStage = 'done';
-  W.state.progressKernelQuiet = false;
-  W.state.progressPaused = false;
   W.stopElapsed();
   if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
   if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
+  var from = W.state.progressPct;
+  var start = Date.now();
   if (message && W.els.progressLabel) W.els.progressLabel.textContent = message;
-  /* Jump straight to 100% - do not ease from a lagged display during kernel quiet. */
-  W.state.progressPct = 100;
-  W.state.progressDisplay = 100;
-  W.applyProgressVisual(100, message || W.t('jailbreakSuccess'));
-  try { document.body.className = 'done'; } catch (e) {}
+  var anim = setInterval(function () {
+    var p = Math.min(1, (Date.now() - start) / 900);
+    W.updateProgress(Math.floor(from + (100 - from) * p));
+    if (p >= 1) {
+      try { clearInterval(anim); } catch (eA) {}
+      W.updateProgress(100, message || W.t('jailbreakSuccess'));
+    }
+  }, 30);
+  W.setBodyState('done');
   if (W.els.successMsg) {
     W.els.successMsg.innerHTML = '<span class="check" aria-hidden="true"></span>' + W.t('jailbreakSuccess');
   }
@@ -330,18 +378,18 @@ W.finishProgressSuccess = function (message) {
 };
 
 W.finishProgressFail = function (message) {
+  if (W.state.elfldrFinishTimer) { clearTimeout(W.state.elfldrFinishTimer); W.state.elfldrFinishTimer = 0; }
   W.state.progressDone = true;
   W.state.runStage = 'fail';
-  W.state.progressKernelQuiet = false;
-  W.state.progressPaused = false;
   W.stopElapsed();
   if (W.state.progressTimer) { clearInterval(W.state.progressTimer); W.state.progressTimer = 0; }
   if (W.state.stallTimer) { clearInterval(W.state.stallTimer); W.state.stallTimer = 0; }
-  try { document.body.className = 'fail'; } catch (e) {}
+  W.setBodyState('fail');
+  if (W.recordRun) W.recordRun('fail', message || '');
   if (W.els.failMsg) W.els.failMsg.textContent = message || W.t('jailbreakFail');
   if (W.els.statusMsg) W.els.statusMsg.style.display = 'none';
   W.uiLog(message || W.t('jailbreakFail'), 'error');
-  if (W.ui && W.ui.toast) W.ui.toast(W.t('jailbreakFail'), message || '', 'bad');
+  if (W.ui && W.ui.toast) W.ui.toast(W.t('jailbreakFail'), '', 'bad');
   if (W.ui && W.ui.feedback) W.ui.feedback(false);
 };
 
@@ -386,7 +434,7 @@ W.parseCfi = function (raw) {
     kind = 'PS5';
     media = (n % 200 >= 100) ? 'Digital' : 'Disc';
   }
-  return { code: code, kind: kind, media: media, label: kind + (media ? ' · ' + media : '') };
+  return { code: code, kind: kind, media: media, label: kind + (media ? ' - ' + media : '') };
 };
 
 W.getCachedCfi = function () {
@@ -454,9 +502,9 @@ W.consoleLabel = function () {
   var parts = [];
   if (fw) parts.push('FW ' + fw.str);
   else parts.push('FW -');
-  if (cfi) parts.push(cfi.code + ' · ' + cfi.label);
+  if (cfi) parts.push(cfi.code + ' - ' + cfi.label);
   else parts.push(W.t ? W.t('modelAfterJb') : 'model after JB');
-  return parts.join(' · ');
+  return parts.join(' - ');
 };
 
 g.uiLog = function (m, t) { return W.uiLog(m, t); };

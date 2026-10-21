@@ -121,7 +121,8 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
     if (stage && stage.textContent !== W.state.lastStageText) {
       W.state.lastStageText = stage.textContent;
       W.state.lastStageCls = stage.className || '';
-      if (W.els.progressLabel) W.els.progressLabel.textContent = W.state.lastStageText;
+      /* Quiet UI: keep short status only; percent carries progress. */
+      if (W.els.progressLabel) W.els.progressLabel.textContent = '';
       W.startProgressDriver();
       var st = W.state.lastStageText || '';
       /* "SUCCESS -- N PASS / 0 FAIL" contains the word FAIL. That is a pass
@@ -571,7 +572,7 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
          body.p2jb-stats); before livestat exists (early boot) and after the
          collapse, mirror the stage text into our label instead. */
       if (!live || p2jbComplete) {
-        W.els.progressLabel.textContent = p2jbLastStageText;
+        if (W.els.progressLabel) W.els.progressLabel.textContent = '';
       }
       /* showWin() fires on every win path (KEXP-JOIN detection and the
          already-jailbroken shortcut) - latch completion here so the
@@ -631,9 +632,8 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
   }
 
   function setRelapseStatus(text) {
-    if (!W.els.statusMsg || !text) return;
-    var shown = text.replace(/^\[[+*-]\]\s*/, '');
-    if (W.els.statusMsg.textContent !== shown) W.els.statusMsg.textContent = shown;
+    /* Quiet UI: no Starting/Working/Almost done/Failed status text. */
+    return;
   }
 
   function mirrorRelapse() {
@@ -662,7 +662,9 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       if (!textLine) continue;
       relapseSawConsole = true;
       var kind = 'info';
-      if (/^\[-\]/.test(textLine) || /error|fail/i.test(textLine)) kind = 'error';
+      var soft = /retry|attempt|^Failed\b/i.test(textLine)
+        && !/reboot|WebKit exploit failed|elfldr did not|Kernel iframe did not load/i.test(textLine);
+      if (!soft && (/^\[-\]/.test(textLine) || /error|fail/i.test(textLine))) kind = 'error';
       else if (/^\[\+\]/.test(textLine) || /success|complete|listening/i.test(textLine)) kind = 'success';
       else if (/warning|warn/i.test(textLine)) kind = 'warning';
       setRelapseStatus(textLine);

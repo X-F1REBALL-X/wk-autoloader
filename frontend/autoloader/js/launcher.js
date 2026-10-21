@@ -11,6 +11,10 @@ W.launcher.httpResponseReady = function (xhr, label) {
     return /<title>\s*ELF Launcher\s*<\/title>/i.test(body)
       && (/id=["']banner["']|id=["']ftitle["']/i.test(body) || body.length > 20000);
   }
+  if (label === 'payload-manager') {
+    if (body.length < 256) return false;
+    return /PLDMGR|Payload Manager|payload-manager/i.test(body);
+  }
   if (body.length < 256) return false;
   return /<html|Payload|PLDMGR|payload/i.test(body);
 };
@@ -41,9 +45,10 @@ W.launcher.navigateLocalHttp = function (url, label, portHint) {
 };
 
 W.launcher.revealLogPanel = function () {
+  /* Quiet UI: keep debug log hidden. */
   try {
     var wrap = document.getElementById('logWrapper');
-    if (wrap) wrap.hidden = false;
+    if (wrap) wrap.hidden = true;
   } catch (eR) {}
 };
 
@@ -118,6 +123,18 @@ W.launcher.openWhenHttpReady = function (url, label, portHint, maxWaitMs, firstD
         autoResendUsed = true;
         W.uiLog('Auto-retry: re-sending elf-launcher.elf to :9021 ...', 'warning');
         W.launcher.requestResendAutoload('elf-launcher.elf');
+        started = Date.now();
+        setTimeout(attempt, 4000);
+        return;
+      }
+      offerRetry(reason);
+      return;
+    }
+    if (label === 'payload-manager') {
+      if (!autoResendUsed) {
+        autoResendUsed = true;
+        W.uiLog('Auto-retry: re-sending pldmgr.elf to :9021 ...', 'warning');
+        W.launcher.requestResendAutoload('pldmgr.elf');
         started = Date.now();
         setTimeout(attempt, 4000);
         return;
@@ -267,6 +284,13 @@ W.launcher.probeQuick = function (cb) {
 };
 
 W.autoloadElfName = function () {
+  /* Prefer this run's choice (forceAutoloadName / state) over a drifted localStorage value. */
+  if (W.state.forceAutoloadName === 'pldmgr.elf'
+      || W.state.launcherChoice === W.CHOICE_PAYLOAD_MANAGER
+      || (W.getLauncherChoice && W.getLauncherChoice() === W.CHOICE_PAYLOAD_MANAGER)) {
+    return 'pldmgr.elf';
+  }
+  if (W.state.forceAutoloadName) return W.state.forceAutoloadName;
   /* Elf Launcher only: open-only when :1000 up; else tip ELF name for chain autoload. */
   if (W.state.elfHttpAlreadyUp) return 'wkal-skip';
   /* Console mirror goes first (sent after JB by openElfLauncherPage). */
@@ -379,8 +403,45 @@ W.launcher.openElfLauncherPage = function () {
   });
 };
 
+W.launcher.openPayloadManagerPage = function () {
+  if (W.state.launcherHttpOpenStarted) return;
+  W.state.launcherHttpOpenStarted = true;
+  try {
+    if (W.els.nextTile) {
+      W.els.nextTile.hidden = false;
+      var ico = document.getElementById('nextTileIco');
+      var title = document.getElementById('nextTileTitle');
+      var url = document.getElementById('nextTileUrl');
+      if (ico) ico.src = 'elf-launcher-icon.png';
+      if (title) title.textContent = (W.t && W.t('payloadManager')) ? ('Opening ' + W.t('payloadManager') + '...') : 'Opening Payload Manager...';
+      if (url) url.textContent = 'http://127.0.0.1:8084';
+    }
+  } catch (eTile) {}
+  W.uiLog('pldmgr.elf path - opening :8084 when ready ...', 'success');
+  W.launcher.openWhenHttpReady(W.consoleHttpBase(8084), 'payload-manager', '8084',
+    45000, 2500, 800, true);
+};
+
+W.launcher.openCompanionPage = function () {
+  var wantPm = (W.state.forceAutoloadName === 'pldmgr.elf')
+    || (W.state.launcherChoice === W.CHOICE_PAYLOAD_MANAGER)
+    || (W.getLauncherChoice && W.getLauncherChoice() === W.CHOICE_PAYLOAD_MANAGER);
+  if (wantPm) {
+    W.launcher.openPayloadManagerPage();
+    return;
+  }
+  W.launcher.openElfLauncherPage();
+};
+
 W.launcher.openNow = function () {
   W.state.launcherHttpOpenStarted = false;
+  var wantPm = (W.state.forceAutoloadName === 'pldmgr.elf')
+    || (W.state.launcherChoice === W.CHOICE_PAYLOAD_MANAGER)
+    || (W.getLauncherChoice && W.getLauncherChoice() === W.CHOICE_PAYLOAD_MANAGER);
+  if (wantPm) {
+    W.launcher.openPayloadManagerPage();
+    return;
+  }
   W.launcher.probeElfLauncherHttp(function (up) {
     W.state.elfHttpAlreadyUp = !!up;
     if (up) W.launcher.openElfLauncherPage();
@@ -433,7 +494,7 @@ W.launcher.onAutoloadResult = function (data) {
       W.uiLog('[update] skipping companion open - WK install only', 'info');
       return;
     }
-    W.launcher.openElfLauncherPage();
+    W.launcher.openCompanionPage();
     /* Save CFI after JB when launcher is up - shown from the next splash. */
     setTimeout(function () {
       if (W.persistCfiFromLauncher) W.persistCfiFromLauncher(function () {});

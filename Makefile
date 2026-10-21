@@ -1,5 +1,5 @@
 # WebKit Autoloader Installer - Native PS5 ELF Makefile
-# Release tree marker: v1.1.1
+# Release tree marker: v1.0.0
 
 # Tools
 PYTHON := python3
@@ -29,11 +29,11 @@ FILE_REGISTRY_STAMP := include/.file_registry.stamp
 # Generated version header (stable = base version, dev = + hash/timestamp suffix, see tools/gen_version.py)
 VERSION_HEADER := include/wkali_version.h
 
-# Frontend sources — staged into frontend/dist/ before registry generation:
-#   installer-page/  → cache/progress entry page at dist root
-#   pointer/         → stable /app/index.html entry that redirects into the
+# Frontend sources - staged into frontend/dist/ before registry generation:
+#   installer-page/  -> cache/progress entry page at dist root
+#   pointer/         -> stable /app/index.html entry that redirects into the
 #                      versioned app dir after verifying its __complete__ marker
-#   autoloader/      → the actual WKAL app, served under /app/<version>/
+#   autoloader/      -> the actual WKAL app, served under /app/<version>/
 FRONTEND_INSTALLER_PAGE := frontend/installer-page
 FRONTEND_POINTER := frontend/pointer
 FRONTEND_AUTOLOADER := frontend/autoloader
@@ -58,7 +58,11 @@ CFLAGS  := -Os -Wall -ffunction-sections -fdata-sections $(INCLUDES)
 LDFLAGS := -Wl,--gc-sections
 
 
-all: $(ELF)
+# Default target: the Store-tile build (IgniKey-$(VERSION).elf).
+all: store
+
+# Legacy homescreen installer (not the IgniKey release).
+homescreen: $(ELF)
 
 # Regenerate the version header on every build (cheap, only rewrites on change)
 .PHONY: version print-version icons
@@ -77,21 +81,6 @@ $(ICON0) $(ICON_ICO) $(FAVICON_INSTALLER) $(FAVICON_AUTOLOADER) $(LOGO_INSTALLER
 
 $(FILE_REGISTRY_H) $(FILE_REGISTRY_C): $(FILE_REGISTRY_STAMP)
 
-# Copy third_party/slopkit -> frontend/autoloader/slopkit and apply our patch.
-# The copy is gitignored and regenerated on every build, so the submodule
-# stays pristine.
-.PHONY: slopkit-prepare
-slopkit-prepare:
-	@echo "Preparing slopkit copy..."
-	./tools/apply_slopkit_patch.sh
-
-# Copy third_party/umtx2/document/en/ps5 -> frontend/autoloader/umtx2 and apply
-# our patch. Same pattern as slopkit — pristine submodule, regenerated copy.
-.PHONY: umtx2-prepare
-umtx2-prepare:
-	@echo "Preparing umtx2 copy..."
-	./tools/apply_umtx2_patch.sh
-
 # Fetch the shared elfldr + bundled autoload ELFs (Payload Manager + Hybrid Elf tip) from
 # their pinned GitHub releases (tools/download_deps.sh). Idempotent: skips when
 # the binaries are already present and verified, so offline rebuilds still work.
@@ -100,7 +89,7 @@ payload-deps:
 	@echo "Fetching shared elfldr + Payload Manager + Elf Launcher tip payloads..."
 	./tools/download_deps.sh
 
-$(FILE_REGISTRY_STAMP): $(FRONTEND_FILES) version icons slopkit-prepare umtx2-prepare payload-deps companions
+$(FILE_REGISTRY_STAMP): $(FRONTEND_FILES) version icons payload-deps companions
 	@echo "Staging frontend into $(FRONTEND_STAGE)/..."
 	@V=$$($(PYTHON) tools/gen_version.py --print); \
 	rm -rf $(FRONTEND_STAGE) && \
@@ -125,7 +114,7 @@ $(ELF): $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(SRCS) $(ICON0)
 # versioned ELF it already built); it defaults to $(ELF).
 HOST_PAYLOAD ?= $(ELF)
 
-$(WKAL_HOST): $(WKAL_HOST_SOURCES) version icons $(HOST_PAYLOAD) slopkit-prepare umtx2-prepare payload-deps
+$(WKAL_HOST): $(WKAL_HOST_SOURCES) version icons $(HOST_PAYLOAD) payload-deps
 	@echo "Building $(WKAL_HOST) (embedding frontend/autoloader, overrides and the installer ELF)..."
 	$(PYTHON) tools/build_host.py --frontend $(FRONTEND_AUTOLOADER) --overrides pc-host/overrides --input pc-host/host.py --output $(WKAL_HOST) --payload $(HOST_PAYLOAD)
 
@@ -134,7 +123,7 @@ host: $(WKAL_HOST)
 # Serve the autoloader frontend locally (browser preview) with the same
 # /app/ path mapping and version tokens as the real build.
 .PHONY: dev
-dev: slopkit-prepare umtx2-prepare payload-deps
+dev: payload-deps
 	$(PYTHON) tools/dev_server.py
 
 # Post-JB companion installer: Elf Launcher + Payload Manager pages only.
@@ -144,10 +133,10 @@ COMPANIONS_SRCS := src/companions_main.c src/app_installer.c src/notification.c 
 .PHONY: companions
 companions: $(COMPANIONS_ELF)
 
-# Companions only need install/notify libs — not libmicrohttpd (installer HTTP).
+# Companions only need install/notify libs - not libmicrohttpd (installer HTTP).
 COMPANIONS_LIBS := -L$(TARGET)/lib -lpthread 	-lSceNetCtl -lSceUserService -lSceSystemService -lSceAppInstUtil
 
-$(COMPANIONS_ELF): $(COMPANIONS_SRCS) include/app_installer.h $(ICON0) assets/companions/elf-launcher/param.json assets/companions/elf-launcher/icon0.png
+$(COMPANIONS_ELF): $(COMPANIONS_SRCS) include/app_installer.h $(ICON0) assets/companions/elf-launcher/param.json assets/companions/elf-launcher/icon0.png assets/companions/payload-manager/param.json assets/companions/payload-manager/icon0.png
 	@echo "Building $(COMPANIONS_ELF)..."
 	@mkdir -p $(dir $(COMPANIONS_ELF))
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(COMPANIONS_ELF) $(COMPANIONS_SRCS) $(COMPANIONS_LIBS)
@@ -159,5 +148,45 @@ clean:
 	rm -rf $(FRONTEND_STAGE)
 	rm -f $(ELF) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(FILE_REGISTRY_STAMP)
 	rm -f $(WKAL_HOST) $(VERSION_HEADER)
+	rm -rf $(STORE_GEN) $(STORE_ELF)
 
-.PHONY: all host dev clean slopkit-prepare umtx2-prepare payload-deps companions
+.PHONY: all host dev clean payload-deps companions
+
+# ---------------------------------------------------------------------------
+# Store build (store-only installer): remaps the PS5 Store tile (NPXS40047)
+# to http://127.0.0.1:1022/app/index.html and serves the Midnight UI on :1022.
+# store/restore_main.c is the separate restore payload and is not linked here.
+STORE_DIR   := store
+STORE_GEN   := $(STORE_DIR)/build
+STORE_SRCS  := $(STORE_DIR)/store_remap.c $(STORE_DIR)/tile_edit.c \
+               $(STORE_DIR)/files.c $(STORE_DIR)/toast.c
+SQLITE_SRC  := $(STORE_DIR)/third_party/sqlite3.c
+SQLITE_FLAGS := -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+                -DSQLITE_OMIT_WAL -DSQLITE_DEFAULT_MEMSTATUS=0 -w
+STORE_VERSION := 1.1.3
+STORE_ELF   := WK_Autoloader_Store_V1.1.3.elf
+STORE_CFLAGS := $(CFLAGS) -DIGNIKEY_STORE -I$(STORE_DIR) -I$(STORE_GEN) \
+                -I$(STORE_DIR)/third_party
+
+.PHONY: store
+store: $(STORE_ELF)
+
+$(STORE_GEN)/icon_png.h: $(STORE_DIR)/icon0.png $(STORE_DIR)/tools/embed_png.py
+	@mkdir -p $(STORE_GEN)
+	$(PYTHON) $(STORE_DIR)/tools/embed_png.py $< $@ icon_png
+
+$(STORE_GEN)/pic0_png.h: $(STORE_DIR)/pic0.png $(STORE_DIR)/tools/embed_png.py
+	@mkdir -p $(STORE_GEN)
+	$(PYTHON) $(STORE_DIR)/tools/embed_png.py $< $@ pic0_png
+
+$(STORE_GEN)/sqlite3.o: $(SQLITE_SRC)
+	@mkdir -p $(STORE_GEN)
+	$(CC) -Os -ffunction-sections -fdata-sections -I$(TARGET)/include $(SQLITE_FLAGS) -c -o $@ $<
+
+$(STORE_ELF): $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(SRCS) $(STORE_SRCS) \
+              $(STORE_GEN)/icon_png.h $(STORE_GEN)/pic0_png.h $(STORE_GEN)/sqlite3.o \
+              $(STORE_DIR)/config.h $(STORE_DIR)/store_installer_page.h
+	@echo "Building $(STORE_ELF) (Store tile NPXS40047 -> :1022/app/index.html)..."
+	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(STORE_SRCS) $(FILE_REGISTRY_C) \
+		$(STORE_GEN)/sqlite3.o $(LIBS)
+	$(STRIP) $@

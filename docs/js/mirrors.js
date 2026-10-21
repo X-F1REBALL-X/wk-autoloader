@@ -10,6 +10,37 @@ var relapseMirroredLines = 0, relapseSawConsole = false;
 var p2jbStats = null, p2jbMirroredLines = 0, p2jbLastStageText = '', p2jbLastStageCls = '';
 var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', p2jbComplete = false;
 
+  function armPoopsFinishTimer(note) {
+    if (W.state.elfldrFinishTimer || W.state.finished || W.state.progressDone) return;
+    W.state.elfldrFinishTimer = setTimeout(function () {
+      if (W.state.finished || W.state.progressDone) return;
+      W.state.autoloadPending = false;
+      W.state.finished = true;
+      if (W.finishProgressSuccess) W.finishProgressSuccess(W.t('jailbreakSuccess'));
+      if (W.recordRun) W.recordRun('ok', note || 'poops complete');
+    }, 5000);
+  }
+
+  /* Relapse arms on "listening on port 9021". Poops STAGE5-DONE is the durable
+     on-screen mark (AUTOLOAD-* never reach #scr). Also #cat.ok / #reboot text. */
+  function poopsSuccessSignals(doc) {
+    try {
+      var cat = doc.getElementById('cat');
+      if (cat && /\bok\b/.test(cat.className || '')) return 'cat-ok';
+    } catch (e0) {}
+    try {
+      var reb = doc.getElementById('reboot');
+      var rt = reb ? (reb.textContent || '') : '';
+      if (/ELF LOADER READY/i.test(rt)) return 'reboot-elfldr';
+    } catch (e1) {}
+    try {
+      var ver = doc.getElementById('verdict');
+      var vt = ver ? (ver.textContent || '') : '';
+      if (/ELF LOADER READY|SUCCESS\s*--/i.test(vt)) return 'verdict-ok';
+    } catch (e2) {}
+    return '';
+  }
+
   function mirrorSlopkit() {
     var doc;
     try {
@@ -102,18 +133,35 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
          anything that looks like a failure - never the full raw stream
          (that floods the UI and hides the actual result). */
       if (/^>/.test(line) || /^\[\+\]/.test(line)
-        || /^(STAGE[0-5]|ALLPROC-CHECK|ALIASES-REPAIRED|POOPS-COMPLETE|POOPS-VERDICT|LATCH-HELD|LATCH-READ|OFFSETS-READY|WEBKIT-BASE|MODULE-BASES|SOCKETS|SPAWN|WAKEGATE)/.test(line)) {
+        || /^(STAGE[0-5]|ALLPROC-CHECK|ALIASES-REPAIRED|POOPS-COMPLETE|POOPS-VERDICT|LATCH-HELD|LATCH-READ|OFFSETS-READY|WEBKIT-BASE|MODULE-BASES|SOCKETS|SPAWN|WAKEGATE|AUTOLOAD-OK|AUTOLOAD-WAIT|AUTOLOAD-FAILED|ELFLDR|ELF-SENT)/.test(line)) {
         W.uiLog('[log] ' + line, 'info');
         W.startProgressDriver();
-        if (/^STAGE0|^POOPS-COMPLETE/.test(line)) W.bumpProgressFloor(18);
+        if (/^STAGE0/.test(line)) W.bumpProgressFloor(18);
         else if (/^STAGE1/.test(line)) W.bumpProgressFloor(32);
         else if (/^STAGE2/.test(line)) W.bumpProgressFloor(46);
         else if (/^STAGE3/.test(line)) W.bumpProgressFloor(60);
         else if (/^STAGE4/.test(line)) W.bumpProgressFloor(74);
+        else if (/^STAGE5-DONE/.test(line)) {
+          /* STAGE5-DONE is on #scr (CONCISE). Arm here: startAutoload() often
+             overwrites stage text before the 500ms poll, and AUTOLOAD-* marks
+             are never painted to #scr. */
+          W.bumpProgressFloor(94);
+          armPoopsFinishTimer('stage5-done');
+        }
         else if (/^STAGE5|^SPAWN|^POOPS-VERDICT/.test(line)) W.bumpProgressFloor(88);
+        else if (/^POOPS-COMPLETE|^AUTOLOAD-OK|^AUTOLOAD-WAIT|^ELFLDR|^ELF-SENT/.test(line)) {
+          W.bumpProgressFloor(94);
+          armPoopsFinishTimer('poops mark');
+        }
       } else if (/FAIL|ERROR|REFUSED|REBOOT|failed|panic|exception/i.test(line)
         || /^\[-\]/.test(line)) {
         W.uiLog('[log] ' + line, 'error');
+        /* Fail closed when Poops refuses the request (never posts wkal). */
+        if (!W.state.finished && /POOPS-(PRODUCTION|STAGE5|FW)-REFUSED/i.test(line)) {
+          W.state.autoloadPending = false;
+          W.state.finished = true;
+          if (W.finishProgressFail) W.finishProgressFail(W.t('jailbreakFail'));
+        }
       }
     }
 
@@ -133,16 +181,26 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
             && !/reboot|FAILED\b|boot failed|autoload failed|refused|error|unlucky/i.test(st));
       if (!passSummary && (/fail|reboot|error|refus|unlucky/i.test(st) || W.state.lastStageCls.indexOf('bad') !== -1)) {
         W.uiLog('[stage] ' + W.state.lastStageText, 'error');
-        /* While waiting for wkal autoload postMessage, do not lock W.state.finished -
-           transient FAIL in stage text would block opening :1000/:8084. */
-        if (!W.state.finished && !W.state.autoloadPending) {
+        /* Poops production/stage5/fw refused never posts wkal - fail closed even
+           while autoloadPending. Other transient FAIL lines still wait. */
+        var refused = /refus|noncanonical|Production request refused|Stage 5 request refused|POOPS-.*REFUSED/i.test(st)
+          || (/refus/i.test(st) && W.state.lastStageCls.indexOf('bad') !== -1);
+        if (!W.state.finished && (!W.state.autoloadPending || refused)) {
+          W.state.autoloadPending = false;
           W.state.finished = true;
           W.finishProgressFail(W.t('jailbreakFail'));
         }
-      } else if (/jailbreak completed|completed successfully|elf loader ready/i.test(st)) {
+      } else if (/jailbreak completed|completed successfully|elf loader ready|SUCCESS\s*--/i.test(st)) {
         W.uiLog('[stage] ' + W.state.lastStageText, 'success');
         W.bumpProgressFloor(94);
-      } else if (/stage\s*5|ps10|payload|autoload|elfldr/i.test(st)) {
+        armPoopsFinishTimer('chain complete');
+      } else if (/autoloading|autoloaded|autoload|elfldr/i.test(st)) {
+        /* startAutoload() replaces ELF LOADER READY within the same tick;
+           catch the lasting autoload stage so soft-cap still arms. */
+        W.bumpProgressFloor(94);
+        armPoopsFinishTimer('autoload stage');
+        W.uiLog('[stage] ' + W.state.lastStageText, 'info');
+      } else if (/stage\s*5|ps10|payload/i.test(st)) {
         W.bumpProgressFloor(82);
         W.uiLog('[stage] ' + W.state.lastStageText, 'info');
       } else if (/stage\s*4|ps9/i.test(st)) {
@@ -159,6 +217,15 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
         W.uiLog('[stage] ' + W.state.lastStageText, 'info');
       } else {
         W.uiLog('[stage] ' + W.state.lastStageText, 'info');
+      }
+    }
+
+    /* Durable DOM signals even when stage text was overwritten mid-tick. */
+    if (!W.state.finished && !W.state.progressDone) {
+      var sig = poopsSuccessSignals(doc);
+      if (sig) {
+        W.bumpProgressFloor(94);
+        armPoopsFinishTimer(sig);
       }
     }
 
@@ -348,9 +415,9 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
     }
 
     statText(d.clocks, 'total ' + (s.total || '--:--:--')
-      + (s.phaseKey ? ' · ' + s.phaseKey + ' ' + s.phaseTime : ''));
+      + (s.phaseKey ? ' - ' + s.phaseKey + ' ' + s.phaseTime : ''));
     statText(d.stepChip, 'STEP ' + (s.stepNum || '-') + '/' + (s.stepDen || 7));
-    statText(d.status, s.status || '…');
+    statText(d.status, s.status || '...');
     statText(d.phaseName, (s.phaseKey || 'phase').toUpperCase());
     statText(d.phasePct, s.phasePct !== undefined ? s.phasePct + '%' : '-');
 
@@ -360,7 +427,7 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
     if (s.doneClockPhase) meta.push('done ~' + s.doneClockPhase);
     if (s.stallSecs) meta.push('no progress for ' + s.stallSecs + 's');
     var metaCls = 'stats-meta' + (s.stallSecs ? ' stalled' : '');
-    statText(d.phaseMeta, meta.join(' · ') || 'ETA --:--:--');
+    statText(d.phaseMeta, meta.join(' - ') || 'ETA --:--:--');
     if (d.phaseMeta.className !== metaCls) d.phaseMeta.className = metaCls;
 
     statText(d.overallPct, s.overallPct !== undefined
@@ -368,7 +435,7 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
     var ometa = [];
     if (s.left) ometa.push('~' + s.left + ' left');
     if (s.doneClockOverall) ometa.push('done ~' + s.doneClockOverall);
-    statText(d.overallMeta, ometa.join(' · ') || '- left');
+    statText(d.overallMeta, ometa.join(' - ') || '- left');
 
     if (s.phasePct !== undefined) statFill(d.phaseFill, parseFloat(s.phasePct) / 100);
     if (s.overallPct !== undefined) statFill(d.overallFill, s.overallPct / 100);
@@ -440,7 +507,7 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
     statText(d.phasePct, '100%');
     statText(d.overallPct, '100%');
     statText(d.phaseMeta, '');
-    statText(d.overallMeta, 'elfldr ready - sending payload…');
+    statText(d.overallMeta, 'elfldr ready - sending payload...');
     statFill(d.phaseFill, 1);
     statFill(d.overallFill, 1);
   }
@@ -666,29 +733,24 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       else if (/^\[\+\]/.test(textLine) || /success|complete|listening/i.test(textLine)) kind = 'success';
       else if (/warning|warn/i.test(textLine)) kind = 'warning';
       setRelapseStatus(textLine);
-      /* Relapse floors calibrated to real stages. Snap via bumpProgressFloor
-         (display must not lag during kernel quiet). Ohad: JB used to show ~58%
-         at elfldr because eased display never caught up while the driver was paused. */
-      if (/Offsets ready|Firmware:/.test(textLine)) W.bumpProgressFloor(12);
-      else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(22);
-      else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(38);
-      else if (/Worker/.test(textLine)) W.bumpProgressFloor(55);
-      else if (/ucred_addr/.test(textLine)) {
-        if (W.enterKernelQuiet) W.enterKernelQuiet();
-        W.bumpProgressFloor(75);
-      } else if (/elfldr|listening on port 9021|kernel exploit complete|payloads loaded|kernel chain complete/i.test(textLine)) {
-        if (W.leaveKernelQuiet) W.leaveKernelQuiet();
-        W.bumpProgressFloor(96);
-        if (/elfldr|listening on port 9021/i.test(textLine)) W._maybeApply('relapse-elfldr');
-      } else if (/\bPipes\b/i.test(textLine) && /ready|established|located|fast read/i.test(textLine)) {
-        if (W.enterKernelQuiet) W.enterKernelQuiet();
-        W.bumpProgressFloor(80);
-      } else if (/kernel/i.test(textLine)) {
-        if (W.enterKernelQuiet) W.enterKernelQuiet();
-        if (/fast read and write ready/i.test(textLine)) W.bumpProgressFloor(80);
-        else if (/privileges ready/i.test(textLine)) W.bumpProgressFloor(90);
-        else if (/read and write ready/i.test(textLine)) W.bumpProgressFloor(72);
-        else W.bumpProgressFloor(62);
+      if (/Offsets ready|Firmware:/.test(textLine)) W.bumpProgressFloor(10);
+      else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(18);
+      else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(32);
+      else if (/Worker/.test(textLine)) W.bumpProgressFloor(48);
+      else if (/kernel/.test(textLine)) W.bumpProgressFloor(70);
+      else if (/elfldr|listening on port 9021/.test(textLine)) {
+        W.bumpProgressFloor(88);
+        W._maybeApply('relapse-elfldr');
+        /* Backup finish: if autoload postMessage is delayed/lost, leave soft-cap 94. */
+        if (!W.state.elfldrFinishTimer && !W.state.finished && !W.state.progressDone) {
+          W.state.elfldrFinishTimer = setTimeout(function () {
+            if (W.state.finished || W.state.progressDone) return;
+            W.state.autoloadPending = false;
+            W.state.finished = true;
+            if (W.finishProgressSuccess) W.finishProgressSuccess(W.t('jailbreakSuccess'));
+            if (W.recordRun) W.recordRun('ok', 'elfldr ready');
+          }, 5000);
+        }
       }
       W.uiLog('[relapse] ' + textLine, kind);
     }

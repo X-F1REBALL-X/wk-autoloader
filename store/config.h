@@ -23,9 +23,11 @@
 #endif
 #define TILE_ASSET_FILE  TILE_ASSET_DIR "/icon0.png"
 #define TILE_PIC0_FILE   TILE_ASSET_DIR "/pic0.png"
+#define TILE_PIC1_FILE   TILE_ASSET_DIR "/pic1.png"
 
-#define TILE_ASSET_REF   TILE_ASSET_FILE "?v=34"
-#define TILE_PIC0_REF    TILE_PIC0_FILE "?v=34"
+#define TILE_ASSET_REF   TILE_ASSET_FILE "?v=37"
+#define TILE_PIC0_REF    TILE_PIC0_FILE "?v=37"
+#define TILE_PIC1_REF    TILE_PIC1_FILE "?v=37"
 
 /* Shell path flags so focus pic0 is treated as present (Explore / fpkg_db.c). */
 #define TILE_PIC0_PATH_FLAG        (-6917529027641081856LL)

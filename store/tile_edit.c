@@ -163,7 +163,12 @@ int tile_edit_app_db(char *concept_out, size_t concept_cap)
         return -1;
     }
 
-    sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL);
+    sqlite3_busy_timeout(db, 5000);
+    if (sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) != SQLITE_OK) {
+        fprintf(stderr, "BEGIN app.db failed: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return -1;
+    }
 
     args[0] = TILE_URL;
     args[1] = TILE_URL;
@@ -227,6 +232,19 @@ int tile_edit_app_db(char *concept_out, size_t concept_cap)
         "AppInfoJson = json_set(AppInfoJson, '$.pic0Info', ?) "
         "WHERE titleId = ?",
         args, 3);
+    if (n < 0) {
+        goto fail;
+    }
+    total += n;
+
+    /* pic1Info best-effort (some ShellUI paths use it for hover/start art). */
+    args[0] = TILE_PIC1_REF;
+    args[1] = TILE_ID;
+    n = run_bound(db,
+        "UPDATE tbl_contentinfo SET "
+        "AppInfoJson = json_set(AppInfoJson, '$.pic1Info', ?) "
+        "WHERE titleId = ?",
+        args, 2);
     if (n < 0) {
         goto fail;
     }
@@ -427,7 +445,12 @@ int tile_edit_info_db(const char *concept_id)
         return -1;
     }
 
-    sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL);
+    sqlite3_busy_timeout(db, 5000);
+    if (sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) != SQLITE_OK) {
+        fprintf(stderr, "BEGIN appinfo.db failed: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return -1;
+    }
 
     n = ensure_deeplink_row(db);
     if (n < 0) {

@@ -280,6 +280,5 @@ window.addEventListener('load', function () {
   try {
     W.uiLog('[boot] ui ready in ' + (Date.now() - t0) + 'ms', 'info');
   } catch (e) {}
-  try { console.log('[wkal] splash ready', Date.now() - t0, 'ms'); } catch (e2) {}
 });
 })(typeof window !== 'undefined' ? window : this);

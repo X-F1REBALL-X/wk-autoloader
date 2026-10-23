@@ -17,6 +17,61 @@
 #include "file_registry.h"
 #include "inflate.h"
 #include "app_installer.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+
+/* LAN IP for the UI: SceNetCtl first, getifaddrs fallback (skips 127.x). */
+#define WK_NET_CTL_INFO_IP_ADDRESS 14
+extern int sceNetCtlGetInfo(int code, void *info);
+
+static void wk_get_lan_ip(char *out, size_t n) {
+    union { char ip[16]; unsigned char raw[512]; } info;
+    struct ifaddrs *ifa = NULL, *it;
+    out[0] = 0;
+    memset(&info, 0, sizeof(info));
+    if (sceNetCtlGetInfo(WK_NET_CTL_INFO_IP_ADDRESS, &info) == 0) {
+        info.ip[15] = 0;
+        if (info.ip[0] && strncmp(info.ip, "127.", 4) != 0 && strcmp(info.ip, "0.0.0.0") != 0) {
+            snprintf(out, n, "%s", info.ip);
+            return;
+        }
+    }
+    if (getifaddrs(&ifa) == 0) {
+        for (it = ifa; it; it = it->ifa_next) {
+            struct sockaddr_in *sin;
+            const char *s;
+            if (!it->ifa_addr || it->ifa_addr->sa_family != AF_INET) continue;
+            sin = (struct sockaddr_in *)it->ifa_addr;
+            s = inet_ntoa(sin->sin_addr);
+            if (!s || strncmp(s, "127.", 4) == 0 || strcmp(s, "0.0.0.0") == 0) continue;
+            snprintf(out, n, "%s", s);
+            break;
+        }
+        freeifaddrs(ifa);
+    }
+}
+
+extern int sceKernelGetHwModelName(char *out);
+
+/* Console model (e.g. CFI-1216A); empty on failure. Printable ASCII only. */
+static void wk_get_model(char *out, size_t n) {
+    char buf[64];
+    size_t i, j = 0;
+    out[0] = 0;
+    memset(buf, 0, sizeof(buf));
+    if (sceKernelGetHwModelName(buf) != 0) return;
+    buf[sizeof(buf) - 1] = 0;
+    for (i = 0; buf[i] && j + 1 < n; i++) {
+        unsigned char c = (unsigned char)buf[i];
+        if (c >= 0x20 && c < 0x7f && c != '"' && c != '\\') out[j++] = (char)c;
+    }
+    out[j] = 0;
+    while (j > 0 && out[j - 1] == ' ') out[--j] = 0;
+}
+
 #ifdef IGNIKEY_STORE
 #include "store_remap.h"
 #include "store_installer_page.h"
@@ -137,6 +192,18 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
         MHD_add_response_header(resp, "Content-Type", "text/plain");
         http_status = MHD_HTTP_OK;
         atomic_store(&http_keep_running, 0);
+    } else if (strcmp(url, "/app/" WKAL_BASE_VERSION "/__complete__") == 0 ||
+               strcmp(url, "/app/" WKAL_FULL_VERSION "/__complete__") == 0) {
+        /* Base-version alias: installers may poll /app/1.0.0/__complete__
+         * even when the staged tree is /app/1.0.0-dev-... Return the same
+         * marker string as the versioned path / /version. */
+        resp = MHD_create_response_from_buffer(strlen(WKAL_FULL_VERSION),
+                                               (void *)WKAL_FULL_VERSION,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/plain; charset=utf-8");
+        MHD_add_response_header(resp, "Cache-Control", "no-store");
+        http_status = MHD_HTTP_OK;
+        wkali_log("[HTTP] Serving __complete__ alias for %s -> %s\n", url, WKAL_FULL_VERSION);
     } else if (strcmp(url, ROUTE_VERSION) == 0) {
         resp = MHD_create_response_from_buffer(strlen(WKAL_FULL_VERSION),
                                                (void *)WKAL_FULL_VERSION,
@@ -149,6 +216,21 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
             snprintf(uid_hdr, sizeof(uid_hdr), "%08x", (unsigned int)uid);
             MHD_add_response_header(resp, "X-User-Id", uid_hdr);
         }
+    } else if (strcmp(url, "/api/sysinfo") == 0) {
+        char model[64], ip[64], body[192];
+        wk_get_model(model, sizeof(model));
+        wk_get_lan_ip(ip, sizeof(ip));
+        snprintf(body, sizeof(body), "{\"model\":\"%s\",\"ip\":\"%s\"}", model, ip);
+        resp = MHD_create_response_from_buffer(strlen(body), body, MHD_RESPMEM_MUST_COPY);
+        MHD_add_response_header(resp, "Content-Type", "application/json");
+        MHD_add_response_header(resp, "Cache-Control", "no-store");
+    } else if (strcmp(url, "/api/netinfo") == 0) {
+        char ip[64], body[128];
+        wk_get_lan_ip(ip, sizeof(ip));
+        snprintf(body, sizeof(body), "{\"ip\":\"%s\"}", ip);
+        resp = MHD_create_response_from_buffer(strlen(body), body, MHD_RESPMEM_MUST_COPY);
+        MHD_add_response_header(resp, "Content-Type", "application/json");
+        MHD_add_response_header(resp, "Cache-Control", "no-store");
     } else if (strcmp(url, "/logs") == 0) {
         const char *pos_str = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "pos");
         size_t pos = 0;

@@ -2,9 +2,7 @@
 
 PS5 Store jailbreak host (NPXS40047). Private repo by X-F1REBALL-X.
 
-Current version: **1.1.3**.
-
-1.1.3 installs onto the PlayStation Store tile (Store build).
+Current version: **1.0.0** (branch `midnight-v34`).
 
 ## What it is
 
@@ -18,7 +16,7 @@ Same `/app/` path as v13, with AppCache, so the page persists across reboots.
 ## Highlights
 
 - UI: Midnight (the only theme)
-- Visible version: `1.1.3`
+- Visible version: `1.0.0`
 - Auto Start: off by default
 - Cancel: only during the Auto Start countdown (not mid-jailbreak)
 - While running: percentage + timer on the round button
@@ -26,7 +24,7 @@ Same `/app/` path as v13, with AppCache, so the page persists across reboots.
 
 ## Restore
 
-To return the Store tile to stock, download `IgniKey_Store_Restore_V1.0.0.elf` from the release,
+To return the Store tile to stock, download `WK_Autoloader_Store_Restore_V1.1.3.elf` from the release,
 send it to elfldr like the IgniKey ELF, then reboot.
 
 ## Build

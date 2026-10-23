@@ -40,6 +40,7 @@ W.loadHistory = function () {
 
 W.saveHistoryEntry = function (entry) {
   var arr = W.loadHistory();
+  if (entry && !entry.ts) entry.ts = Date.now();
   arr.unshift(entry);
   if (arr.length > 12) arr = arr.slice(0, 12);
   try { W.lsSet(W.LS_HISTORY_KEY, JSON.stringify(arr)); } catch (e) {}

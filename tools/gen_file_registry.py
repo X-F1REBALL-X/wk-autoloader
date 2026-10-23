@@ -340,12 +340,7 @@ def build_manifest(files, version, build_time, app_dir, pointer_path, marker_pat
     lines += [
         "",
         "NETWORK:",
-        "/install",
-        "/version",
-        "/logs",
-        "/index.html",
-        "/ignikey.html",
-        "/",
+        "*",
         "",
         "FALLBACK:",
         "/ /index.html",

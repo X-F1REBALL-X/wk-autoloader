@@ -14,7 +14,7 @@ INCLUDES := -Iinclude -I$(TARGET)/include
 LIBS     := $(TARGET)/lib/libmicrohttpd.a \
             -L$(TARGET)/lib -lpthread \
             -lSceNetCtl -lSceUserService -lSceSystemService \
-            -lSceAppInstUtil
+            -lSceAppInstUtil -lkernel_sys
 
 # Source Files
 SRCS := src/main.c src/http_server.c src/app_installer.c \
@@ -148,7 +148,7 @@ clean:
 	rm -rf $(FRONTEND_STAGE)
 	rm -f $(ELF) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(FILE_REGISTRY_STAMP)
 	rm -f $(WKAL_HOST) $(VERSION_HEADER)
-	rm -rf $(STORE_GEN) $(STORE_ELF)
+	rm -rf $(STORE_GEN) $(STORE_ELF) WK_Autoloader_Store_Restore_V1.1.3.elf
 
 .PHONY: all host dev clean payload-deps companions
 
@@ -188,5 +188,20 @@ $(STORE_ELF): $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(SRCS) $(STORE_SRCS) \
               $(STORE_DIR)/config.h $(STORE_DIR)/store_installer_page.h
 	@echo "Building $(STORE_ELF) (Store tile NPXS40047 -> :1022/app/index.html)..."
 	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(STORE_SRCS) $(FILE_REGISTRY_C) \
+		$(STORE_GEN)/sqlite3.o $(LIBS)
+	$(STRIP) $@
+
+# Full Store restore: undoes NPXS40047 remap (backup or built-in stock).
+# Send to elfldr :9021, then reboot. Not linked into the Store installer ELF.
+RESTORE_ELF := WK_Autoloader_Store_Restore_V1.1.3.elf
+.PHONY: restore
+restore: $(RESTORE_ELF)
+
+$(RESTORE_ELF): $(STORE_DIR)/restore_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
+                $(STORE_GEN)/sqlite3.o $(STORE_DIR)/config.h
+	@mkdir -p $(STORE_GEN)
+	@echo "Building $(RESTORE_ELF) (restore PS Store tile)..."
+	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ \
+		$(STORE_DIR)/restore_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
 		$(STORE_GEN)/sqlite3.o $(LIBS)
 	$(STRIP) $@

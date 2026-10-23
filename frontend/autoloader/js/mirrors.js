@@ -581,6 +581,7 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
         p2jbComplete = true;
         W.bumpProgressFloor(95);
         W.uiLog('[p2jb] exploit complete - elfldr ready.', 'success');
+        try{if(W.uiSetPayload)W.uiSetPayload('plElfldr','READY',true);}catch(e){}
         W._maybeApply('p2jb-elfldr');
         /* Pin the panel green at 100% until the autoload result lands, then
            onAutoloadResult collapses back to the classic full-height log.
@@ -681,7 +682,10 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       } else if (/elfldr|listening on port 9021|kernel exploit complete|payloads loaded|kernel chain complete/i.test(textLine)) {
         if (W.leaveKernelQuiet) W.leaveKernelQuiet();
         W.bumpProgressFloor(96);
-        if (/elfldr|listening on port 9021/i.test(textLine)) W._maybeApply('relapse-elfldr');
+        if (/elfldr|listening on port 9021/i.test(textLine)) {
+          try { if (W.uiSetPayload) W.uiSetPayload('plElfldr', 'READY', true); } catch (e) {}
+          W._maybeApply('relapse-elfldr');
+        }
       } else if (/\bPipes\b/i.test(textLine) && /ready|established|located|fast read/i.test(textLine)) {
         if (W.enterKernelQuiet) W.enterKernelQuiet();
         W.bumpProgressFloor(80);

@@ -21,16 +21,15 @@
         <div class="meta"><span class="ver" id="appVer">v1.0.0</span></div>
       </div>
       <div class="spacer"></div>
-      <span class="chip" id="detectChip" data-i18n="detecting">Detecting…</span>
     </header>
 
+    <div class="ver-pill" id="storeVer">v1.1.3</div>
     <div id="splash" aria-hidden="false">
       <main class="main">
         <section class="hero card home-panel" id="homeCard">
           <div class="home-deco" aria-hidden="true">
-            <img class="home-ico" src="store-tile-icon.png" width="64" height="64" alt="">
-            <div class="home-title">WK Autoloader</div>
-            <div class="home-div"><i></i><s>&#9829;</s><i></i></div>
+            <div class="home-title"><span class="wk">WK</span> Autoloader</div>
+            <div class="home-div"><i></i><svg class="home-lock" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="2.5" fill="#f26b1d"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="#f26b1d" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="15.3" r="1.6" fill="#fff"/><rect x="11.3" y="15.8" width="1.4" height="3" rx=".7" fill="#fff"/></svg><i></i></div>
           </div>
           <p class="label" data-i18n="startJailbreakTitle">Start jailbreak</p>
           <p class="label slim" data-i18n="afterJb" hidden>After jailbreak, open</p>
@@ -46,8 +45,65 @@
           <p class="hint" id="countdownHint"></p>
           <p class="unsupported" id="unsupportedMsg" hidden data-i18n="fwUnsupportedLong">This firmware is not supported.</p>
         </section>
+        <section class="card home-info" id="homeInfo" aria-label="Console info">
+          <p class="label">Console</p>
+          <div class="hi-row">
+            <div class="hi-chip"><span class="k">Model</span><b id="hiModel">-</b></div>
+            <div class="hi-chip"><span class="k">FW</span><b id="hiFw">-</b></div>
+            <div class="hi-chip"><span class="k">Chain</span><b id="hiChain">-</b></div>
+            <span class="hi-br" aria-hidden="true"></span>
+            <div class="hi-chip"><span class="k">IP</span><b id="hiIp">-</b></div>
+            <div class="hi-chip"><span class="k">Auto-start</span><b id="hiAuto">-</b></div>
+          </div>
+        </section>
+      </main>
+    </div>
 
-        <section class="settings card" id="settingsPanel">
+    <main id="loader" hidden>
+      <section class="hero card center postjb-card home-panel">
+        <div class="home-deco" aria-hidden="true">
+          <div class="home-title" id="titleMsg"><span class="wk">WK</span> Autoloader</div>
+          <div class="home-div"><i></i><svg class="home-lock" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="2.5" fill="#f26b1d"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="#f26b1d" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="15.3" r="1.6" fill="#fff"/><rect x="11.3" y="15.8" width="1.4" height="3" rx=".7" fill="#fff"/></svg><i></i></div>
+        </div>
+        <p class="meta2" id="metaMsg" hidden>FW - · chain -</p>
+        <div class="ring" id="progressRing" hidden><div id="progressPct">Jailbreak</div></div>
+        <p class="status pill-run" id="statusMsg" data-i18n="jailbreakStarted">Jailbreak started</p>
+        <div id="successMsg" class="pill-ok">Jailbroken</div>
+        <div id="failMsg" data-i18n="jailbreakFail">Failed. Restart the console</div>
+        <div id="progressContainer" hidden><div id="progressBar"></div></div>
+        <p id="elapsedMsg">Elapsed 0:00</p>
+        <div id="stallMsg" class="stall" hidden></div>
+        <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
+        <div id="nextTile" class="next" hidden>
+          <img id="nextTileIco" src="elf-launcher-icon.png" width="48" height="48" alt="" />
+          <div><p class="n" id="nextTileTitle" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d" id="nextTileUrl">http://127.0.0.1:1000</p></div>
+        </div>
+      </section>
+      <section class="card postjb-info" id="loaderInfo" aria-label="Payloads and console">
+        <p class="label">Payloads</p>
+        <div id="payloadList" class="hi-row">
+          <div id="plElfldr" class="hi-chip off"><span class="k">elfldr</span><b id="plElfldrTag">WAIT</b></div>
+          <div id="plLauncher" class="hi-chip off"><span class="k">Elf Launcher</span><b id="plLauncherTag">WAIT</b></div>
+        </div>
+        <p class="label">Console</p>
+        <div class="hi-row postjb-meta">
+          <div class="hi-chip"><span class="k">Model</span><b id="ldModel">-</b></div>
+          <div class="hi-chip"><span class="k">FW</span><b id="ldFw">-</b></div>
+          <div class="hi-chip"><span class="k">Chain</span><b id="ldChain">-</b></div>
+          <div class="hi-chip"><span class="k">IP</span><b id="ldIp">-</b></div>
+        </div>
+      </section>
+      <div id="logWrapper" hidden><div id="logContainer"></div></div>
+      <div id="p2jbStats" hidden>
+        <div class="stats-head"><span class="stats-title">P2JB</span><span class="stats-chip" id="p2jbStepChip">STEP –/7</span><span class="stats-clock" id="p2jbClocks">total --:--:--</span></div>
+        <div class="stats-status" id="p2jbStatus">…</div>
+        <div class="stats-infoline"><div class="stats-detail" id="p2jbDetail" hidden></div><div id="p2jbGroups" hidden></div></div>
+        <div class="stats-bar-row"><div class="stats-bar-label"><span id="p2jbPhaseName">PHASE</span><span id="p2jbPhasePct">–</span></div><div class="stats-track"><div class="stats-fill" id="p2jbPhaseFill"></div></div><div class="stats-meta" id="p2jbPhaseMeta">ETA --:--:--</div></div>
+        <div class="stats-bar-row overall"><div class="stats-bar-label"><span>OVERALL</span><span id="p2jbOverallPct">–</span></div><div class="stats-track big"><div class="stats-fill" id="p2jbOverallFill"></div></div><div class="stats-meta" id="p2jbOverallMeta">– left</div></div>
+      </div>
+    </main>
+
+    <section class="settings card" id="settingsPanel">
           <p class="label" data-i18n="settings">Options</p>
 
           <p class="label slim" data-i18n="chainTitle">Chain</p>
@@ -57,44 +113,21 @@
           <p class="hint" id="chainHint"></p>
 
           <p class="label slim" data-i18n="timingTitle">Timing</p>
-          <label class="toggle" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" checked /><span data-i18n="autoStartJb">Auto-start</span></label>
-          <label class="field" for="startDelay" hidden style="display:none"><span data-i18n="startDelay">Delay</span><input type="range" id="startDelay" min="0" max="5" step="0.5" value="0" /><b id="startDelayVal">0s</b></label>
+          <div class="chips" id="autoStartRow">
+            <label class="opt on" id="autoStartTile" for="autoJailbreak"><input type="checkbox" id="autoJailbreak" class="vh" checked /><span class="t" data-i18n="autoStartJb">Auto-start</span><span class="d" id="autoStartState">On</span></label>
+          </div>
+          <p class="hint" data-i18n="startDelay">Delay</p>
+          <div class="chips" id="startDelay" role="group" aria-label="Auto-start delay">
+            <button type="button" class="opt" data-delay="1"><span class="t">1s</span></button>
+            <button type="button" class="opt" data-delay="2"><span class="t">2s</span></button>
+            <button type="button" class="opt on" data-delay="3"><span class="t">3s</span></button>
+          </div>
 
 
           <p class="label slim" data-i18n="historyTitle">Recent</p>
           <div id="historyList" class="history"></div>
           <p class="hint" id="historyEmpty" data-i18n="historyEmpty">No runs yet</p>
         </section>
-      </main>
-    </div>
-
-    <main id="loader" hidden>
-      <section class="hero card center">
-        <img class="run-ico" src="logo.png" width="80" height="80" alt="" />
-        <p class="title" id="titleMsg">WK Autoloader</p>
-        <p class="meta2" id="metaMsg">FW - · chain -</p>
-        <div class="ring" id="progressRing"><div id="progressPct">0%</div></div>
-        <p class="status" id="statusMsg" data-i18n="jailbreakStarted">Jailbreak started</p>
-        <div id="progressContainer" hidden><div id="progressBar"></div></div>
-        <p id="elapsedMsg">Elapsed 0:00</p>
-        <div id="successMsg"><span class="check" aria-hidden="true"></span><span data-i18n="jailbreakSuccess">Done</span></div>
-        <div id="failMsg" data-i18n="jailbreakFail">Failed. Restart the console</div>
-        <div id="stallMsg" class="stall" hidden></div>
-        <div id="progressLabel" hidden data-i18n="jailbreakInProgress">In progress</div>
-        <div id="nextTile" class="next" hidden>
-          <img id="nextTileIco" src="elf-launcher-icon.png" width="56" height="56" alt="" />
-          <div><p class="n" id="nextTileTitle" data-i18n="openingElf">Opening Elf Launcher…</p><p class="d" id="nextTileUrl">http://127.0.0.1:1000</p></div>
-        </div>
-        <div id="logWrapper" hidden><div id="logContainer"></div></div>
-        <div id="p2jbStats" hidden>
-          <div class="stats-head"><span class="stats-title">P2JB</span><span class="stats-chip" id="p2jbStepChip">STEP –/7</span><span class="stats-clock" id="p2jbClocks">total --:--:--</span></div>
-          <div class="stats-status" id="p2jbStatus">…</div>
-          <div class="stats-infoline"><div class="stats-detail" id="p2jbDetail" hidden></div><div id="p2jbGroups" hidden></div></div>
-          <div class="stats-bar-row"><div class="stats-bar-label"><span id="p2jbPhaseName">PHASE</span><span id="p2jbPhasePct">–</span></div><div class="stats-track"><div class="stats-fill" id="p2jbPhaseFill"></div></div><div class="stats-meta" id="p2jbPhaseMeta">ETA --:--:--</div></div>
-          <div class="stats-bar-row overall"><div class="stats-bar-label"><span>OVERALL</span><span id="p2jbOverallPct">–</span></div><div class="stats-track big"><div class="stats-fill" id="p2jbOverallFill"></div></div><div class="stats-meta" id="p2jbOverallMeta">– left</div></div>
-        </div>
-      </section>
-    </main>
 
     <footer id="footer"><b>Developed by <a href="https://github.com/X-F1REBALL-X" target="_blank" rel="noopener">X-F1REBALL-X</a></b></footer>
   </div>

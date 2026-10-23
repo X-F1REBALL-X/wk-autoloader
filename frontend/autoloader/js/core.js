@@ -140,17 +140,10 @@ W.formatLocalDateTime = function (ms) {
     + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 };
 
-/* Elapsed line: "Elapsed 0:42 · 2026-10-21 17:11" (date/time in orange). */
+/* Elapsed line: only "Elapsed 0:42". Date/time lives in Recent jailbreaks. */
 W.paintElapsedLine = function (elapsedStr) {
   if (!W.els.elapsedMsg) return;
-  var t = elapsedStr || '0:00';
-  var base = W.t('elapsed', { t: t });
-  var at = W.state.jbStartedAt ? W.formatLocalDateTime(W.state.jbStartedAt) : '';
-  if (!at) {
-    W.els.elapsedMsg.textContent = base;
-    return;
-  }
-  W.els.elapsedMsg.innerHTML = base + ' · <span class="jb-at">' + at + '</span>';
+  W.els.elapsedMsg.textContent = W.t('elapsed', { t: elapsedStr || '0:00' });
 };
 
 W.lsGet = function (k, d) {
@@ -177,16 +170,17 @@ W.applyProgressVisual = function (display, message) {
   W.state.progressDisplay = display;
   var bar = W.els.progressBar;
   if (bar) {
-    var scale = 'scaleX(' + (display / 100) + ')';
-    if (bar.__scale !== scale) {
-      bar.__scale = scale;
-      bar.style.webkitTransform = scale;
-      bar.style.transform = scale;
+    var pct = (display / 100 * 100).toFixed(1) + '%';
+    if (bar.__w !== pct) {
+      bar.__w = pct;
+      bar.style.width = pct;
+      bar.style.webkitTransform = 'none';
+      bar.style.transform = 'none';
     }
   }
   var pctEl = W.els.progressPct;
   if (pctEl) {
-    var pctText = '';
+    var pctText = 'Jailbreak';
     if (pctEl.textContent !== pctText) pctEl.textContent = pctText;
   }
   var ring = W.els.progressRing;
@@ -305,6 +299,21 @@ W.setMeta = function (fwStr, chain) {
   W.els.metaMsg.textContent = W.t('metaFwChain', { fw: fwStr || '-', chain: W.formatChainLabel(chain) });
 };
 
+
+W.uiSetPayload = function (id, tag, on) {
+  var li = document.getElementById(id);
+  var tg = document.getElementById(id + 'Tag');
+  var t = String(tag || (on ? 'READY' : 'WAIT'));
+  if (li) {
+    li.classList.remove('off', 'ok', 'warn');
+    var tl = t.toLowerCase();
+    if (!on || tl === 'wait') li.classList.add('off');
+    else if (tl === 'ready' || tl === 'open') li.classList.add('ok');
+    else li.classList.add('warn');
+  }
+  if (tg) tg.textContent = t;
+};
+
 W.finishProgressSuccess = function (message) {
   W.state.progressDone = true;
   W.state.runStage = 'done';
@@ -319,10 +328,12 @@ W.finishProgressSuccess = function (message) {
   W.state.progressDisplay = 100;
   W.applyProgressVisual(100, message || W.t('jailbreakSuccess'));
   try { document.body.className = 'done'; } catch (e) {}
+  try { if (W.uiSetPayload) { W.uiSetPayload('plElfldr','READY',true); } if (W.ui) { W.ui._sysinfoAsked = false; W.ui._netinfoAsked = false; if (W.ui.renderHomeInfo) W.ui.renderHomeInfo(); if (W.ui.renderHistory) W.ui.renderHistory(); } } catch (eP) {}
   if (W.els.successMsg) {
-    W.els.successMsg.innerHTML = '<span class="check" aria-hidden="true"></span>' + W.t('jailbreakSuccess');
+    W.els.successMsg.textContent = 'Jailbroken';
+    W.els.successMsg.hidden = false;
   }
-  if (W.els.nextTile) W.els.nextTile.hidden = false;
+  if (W.els.nextTile) W.els.nextTile.hidden = true;
   if (W.ui && W.ui.toast) {
     var wantPm = (W.state.forceAutoloadName === 'pldmgr.elf')
       || (W.state.launcherChoice === W.CHOICE_PAYLOAD_MANAGER);
@@ -362,6 +373,7 @@ W.clearSlopkitState = function () {
 
 
 W.LS_CFI_KEY = 'wkal_cfi_model';
+W.LS_IP_KEY = 'wkal_lan_ip';
 
 W.parseCfi = function (raw) {
   var s = String(raw || '').toUpperCase().replace(/\s+/g, '');
@@ -407,11 +419,11 @@ W.setCachedCfi = function (raw) {
 /* Option A: best-effort pre-JB model detect (UA / WebKit quirks). Usually empty. */
 W.detectCfiPreJb = function () {
   var ua = String(navigator.userAgent || '');
-  var m = ua.match(/CFI-?\\d{4}[A-Z0-9]*/i);
+  var m = ua.match(/CFI-?\d{4}[A-Z0-9]*/i);
   if (m) return W.setCachedCfi(m[0]);
   try {
     var p = String(navigator.platform || '');
-    m = p.match(/CFI-?\\d{4}[A-Z0-9]*/i);
+    m = p.match(/CFI-?\d{4}[A-Z0-9]*/i);
     if (m) return W.setCachedCfi(m[0]);
   } catch (e) {}
   return W.getCachedCfi(); /* fallback: saved from a prior JB */
@@ -442,7 +454,7 @@ W.persistCfiFromLauncher = function (cb) {
         /* scan stringified json for CFI-xxxx */
         var blob = '';
         try { blob = JSON.stringify(j); } catch (e2) {}
-        var m = blob.match(/CFI-?\\d{4}[A-Z0-9]*/i);
+        var m = blob.match(/CFI-?\d{4}[A-Z0-9]*/i);
         if (m && take(m[0], 'sysinfo-scan')) return;
         done(cached);
       })

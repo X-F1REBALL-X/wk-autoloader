@@ -137,6 +137,15 @@ W.ui.renderHistory = function () {
     row.className = 'hrow';
     left = document.createElement('span');
     left.textContent = (e.chain || '-') + (e.stage && e.stage !== 'done' && e.stage !== 'fail' ? ' · ' + e.stage : '');
+    if (e.ts) {
+      var dt = new Date(e.ts), p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+      if (!isNaN(dt.getTime())) {
+        var ds = document.createElement('span');
+        ds.className = 'hdate';
+        ds.textContent = p2(dt.getDate()) + '/' + p2(dt.getMonth() + 1) + ' ' + p2(dt.getHours()) + ':' + p2(dt.getMinutes());
+        left.appendChild(ds);
+      }
+    }
     right = document.createElement('span');
     cls = e.result === 'ok' ? 'ok' : e.result === 'hang' ? 'hang' : 'fail';
     right.className = cls;
@@ -145,9 +154,97 @@ W.ui.renderHistory = function () {
     row.appendChild(right);
     list.appendChild(row);
   }
+
+};
+
+W.ui.renderHomeInfo = function () {
+  var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v || '-'; };
+  var fw = null, chain = null;
+  try { fw = W.detectFirmware(); } catch (e) {}
+  try {
+    if (!fw || W.recommendChain(fw)) {
+      chain = W.state && W.state.exploitMode ? W.state.exploitMode : W.getChainPref();
+    }
+  } catch (e2) {}
+  set('hiFw', fw && fw.str ? fw.str : '-');
+  set('hiChain', chain ? chain.charAt(0).toUpperCase() + chain.slice(1) : '-');
+  set('ldFw', fw && fw.str ? fw.str : '-');
+  set('ldChain', chain ? chain.charAt(0).toUpperCase() + chain.slice(1) : '-');
+
+  /* Model: live → cached CFI. Never '-' if we have a saved value. */
+  var showModel = function (raw) {
+    var p = raw ? W.parseCfi(raw) : null;
+    if (!p && W.getCachedCfi) p = W.getCachedCfi();
+    var label = '';
+    if (p) {
+      if (p.kind !== 'PS5') label = p.code + ' \u00b7 ' + p.kind + (p.media && p.kind !== 'Pro' ? ' ' + p.media : '');
+      else label = p.code || '';
+    } else if (raw) label = String(raw).slice(0, 32);
+    else {
+      var rawCached = W.lsGet(W.LS_CFI_KEY, '') || '';
+      if (rawCached) label = String(rawCached).slice(0, 32);
+    }
+    set('hiModel', label || '-');
+    set('ldModel', label || '-');
+  };
+  if (W.state && W.state.hwModel) showModel(W.state.hwModel);
+  else showModel('');
+
+  /* IP: live → localStorage. Never '-' if saved. */
+  var ip = (W.state && W.state.lanIp) ? W.state.lanIp : (W.lsGet(W.LS_IP_KEY, '') || '');
+  set('hiIp', ip || '-');
+  set('ldIp', ip || '-');
+
+  if (!W.ui._sysinfoAsked) {
+    W.ui._sysinfoAsked = true;
+    try {
+      var sx = new XMLHttpRequest();
+      sx.open('GET', 'http://127.0.0.1:1022/api/sysinfo?t=' + Date.now(), true);
+      sx.timeout = 3000;
+      sx.onload = function () {
+        try {
+          var j = JSON.parse(sx.responseText || '{}');
+          var m = j && typeof j.model === 'string' ? j.model.replace(/[^\x20-\x7e]/g, '').trim() : '';
+          if (m) {
+            if (W.state) W.state.hwModel = m;
+            if (W.parseCfi(m)) W.setCachedCfi(m); else W.lsSet(W.LS_CFI_KEY, m);
+            showModel(m);
+          }
+          if (j && j.ip && /^\d+\.\d+\.\d+\.\d+$/.test(j.ip) && j.ip.indexOf('127.') !== 0) {
+            if (W.state) W.state.lanIp = j.ip;
+            W.lsSet(W.LS_IP_KEY, j.ip);
+            set('hiIp', j.ip); set('ldIp', j.ip);
+          }
+        } catch (e5) {}
+      };
+      sx.send();
+    } catch (e6) {}
+  }
+  if (!W.ui._netinfoAsked) {
+    W.ui._netinfoAsked = true;
+    try {
+      var x = new XMLHttpRequest();
+      x.open('GET', 'http://127.0.0.1:1022/api/netinfo?t=' + Date.now(), true);
+      x.timeout = 3000;
+      x.onload = function () {
+        try {
+          var j = JSON.parse(x.responseText || '{}');
+          if (j && j.ip && /^\d+\.\d+\.\d+\.\d+$/.test(j.ip) && j.ip.indexOf('127.') !== 0) {
+            if (W.state) W.state.lanIp = j.ip;
+            W.lsSet(W.LS_IP_KEY, j.ip);
+            set('hiIp', j.ip); set('ldIp', j.ip);
+          }
+        } catch (e4) {}
+      };
+      x.send();
+    } catch (e3) {}
+  }
+  var a = document.getElementById('autoJailbreak');
+  set('hiAuto', a ? (a.checked ? 'On' : 'Off') : '-');
 };
 
 W.ui.syncChainUi = function () {
+  try { W.ui.renderHomeInfo(); } catch (eh) {}
   var fw = W.detectFirmware();
   var pref = W.getChainPref();
   var rec = fw ? W.recommendChain(fw) : null;
@@ -274,10 +371,12 @@ W.ui.bindHome = function () {
   var openOnly = document.getElementById('openLauncherOnly');
   var autoTimer = 0;
   var remaining = 0;
+  var delayCur = 3;
 
   function delaySec() {
-    /* v21: no start delay - Auto-start fires immediately. */
-    return 0;
+    var n = parseFloat(delayCur);
+    if (isNaN(n)) n = 3;
+    return Math.round(Math.min(3, Math.max(1, n)));
   }
   function retryN() {
     var n = retry ? parseInt(retry.value, 10) : 1;
@@ -286,14 +385,29 @@ W.ui.bindHome = function () {
     return n;
   }
   function paintSliders() {
-    if (delayVal) delayVal.textContent = delaySec() + 's';
+    if (delay) {
+      var db = delay.querySelectorAll('.opt[data-delay]'), k;
+      for (k = 0; k < db.length; k++) {
+        if (parseInt(db[k].getAttribute('data-delay'), 10) === delaySec()) db[k].classList.add('on');
+        else db[k].classList.remove('on');
+      }
+    }
     if (retryVal) retryVal.textContent = String(retryN());
   }
 
   /* Auto-start ON by default (first visit). */
   var savedAuto = W.lsGet(W.LS_AUTO_KEY, '1');
   if (auto) auto.checked = savedAuto !== '0';
-  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delay.value = String(Math.round(Math.min(5, Math.max(0.5, dv)) * 2) / 2); }
+  function paintAuto() {
+    var tile = document.getElementById('autoStartTile');
+    var st = document.getElementById('autoStartState');
+    var on = !!(auto && auto.checked);
+    if (tile) { if (on) tile.classList.add('on'); else tile.classList.remove('on'); }
+    if (st) st.textContent = on ? 'On' : 'Off';
+    try { W.ui.renderHomeInfo(); } catch (eh) {}
+  }
+  paintAuto();
+  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delayCur = Math.round(Math.min(3, Math.max(1, dv))); }
   if (retry) { var rv = parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10); if (isNaN(rv)) rv = 1; retry.value = String(Math.min(3, Math.max(0, rv))); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
@@ -332,7 +446,7 @@ W.ui.bindHome = function () {
     if (cancel) cancel.hidden = true;
     if (W.els.countdownHint) W.els.countdownHint.textContent = '';
     autoTimer = setInterval(function () {
-      remaining -= 0.5;
+      remaining -= 1;
       if (remaining <= 0) {
         clearInterval(autoTimer); autoTimer = 0;
         if (cancel) cancel.hidden = true;
@@ -340,7 +454,7 @@ W.ui.bindHome = function () {
         return;
       }
       go.textContent = W.t('cancel') + ' · ' + remaining;
-    }, 500);
+    }, 1000);
   }
 
   var chainBtns = document.querySelectorAll('#chainRow .opt');
@@ -353,6 +467,7 @@ W.ui.bindHome = function () {
   }
   if (auto) auto.addEventListener('change', function () {
     W.lsSet(W.LS_AUTO_KEY, auto.checked ? '1' : '0');
+    paintAuto();
     if (auto.checked) startCountdown();
     else cancelCountdown();
   });
@@ -365,10 +480,13 @@ W.ui.bindHome = function () {
     paintSliders();
   }
   if (delay) {
-    delay.addEventListener('input', onDelayMove);
-    delay.addEventListener('change', onDelayMove);
-    delay.addEventListener('mousemove', onDelayMove);
-    delay.addEventListener('touchmove', onDelayMove);
+    delay.addEventListener('click', function (ev) {
+      var b = ev.target;
+      while (b && b !== delay && !(b.getAttribute && b.getAttribute('data-delay'))) b = b.parentNode;
+      if (!b || b === delay) return;
+      delayCur = parseInt(b.getAttribute('data-delay'), 10);
+      onDelayMove();
+    });
   }
   if (retry) {
     retry.addEventListener('input', onRetryMove);

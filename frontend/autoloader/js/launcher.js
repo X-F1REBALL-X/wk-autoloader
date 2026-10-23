@@ -112,6 +112,7 @@ W.launcher.openWhenHttpReady = function (url, label, portHint, maxWaitMs, firstD
     if (opened) return;
     W.uiLog(label + ' opening :' + portHint + ' (' + reason + ') ...', 'warning');
     opened = true; done = true;
+    try { if (label === 'elf-launcher' && W.uiSetPayload) W.uiSetPayload('plLauncher', 'READY', true); } catch (eChip) {}
     W.launcher.navigateLocalHttp(url, label, portHint);
   }
 
@@ -148,6 +149,7 @@ W.launcher.openWhenHttpReady = function (url, label, portHint, maxWaitMs, firstD
   function doNavigate() {
     if (opened || done) return;
     opened = true; done = true;
+    try { if (label === 'elf-launcher' && W.uiSetPayload) W.uiSetPayload('plLauncher', 'READY', true); } catch (eChip2) {}
     W.launcher.navigateLocalHttp(url, label, portHint);
   }
 
@@ -340,31 +342,22 @@ W.launcher.openElfLauncherPage = function () {
     } catch (eTrig) {}
   }
 
+  function markLauncher(tag) {
+    try { if (W.uiSetPayload) W.uiSetPayload('plLauncher', tag || 'READY', true); } catch (eM) {}
+  }
   function maybeNavigate(alreadyUp, freshMirror) {
-    W.launcher.browserWantsOpen(function (wantOpen) {
-      if (!wantOpen) {
-        if (W.elauto && !W.state.elRefreshRan) { W.state.elRefreshRan = true; W.elauto.refresh(); }
-        W.uiLog('Elf Launcher :1000 ready, open-after-JB is Off (home tile / URL still work)', 'success');
-        if (W.els.nextTile) {
-          try {
-            W.els.nextTile.hidden = false;
-            var d = W.els.nextTile.querySelector('.d');
-            if (d) d.textContent = 'http://127.0.0.1:1000  ·  ' + W.t('openLaterHint');
-          } catch (eN) {}
-        }
-        if (W.ui && W.ui.toast) W.ui.toast(W.t('elfReady'), W.t('openLaterHint'), 'ok');
-        var oo = document.getElementById('openLauncherOnly');
-        if (oo) oo.hidden = false;
-        return;
-      }
+    /* Always open :1000 after WK Autoloader jailbreak. Elf Launcher's own
+     * "open after JB" Off (ps5elfs-browser=closed) must not block us. */
+    function go() {
+      markLauncher('opening');
       if (freshMirror) {
-        /* Fresh start like the bundled path: Elf runs its own AutoPayload. */
         W.uiLog('Console mirror Elf Launcher up - opening :1000 ...', 'success');
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
           25000, 400, 800, false);
       } else if (alreadyUp) {
         W.uiLog('Elf Launcher :1000 already up - trigger Auto then open ...', 'success');
         triggerAuto();
+        markLauncher('READY');
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
           12000, 400, 400, false);
       } else {
@@ -372,7 +365,8 @@ W.launcher.openElfLauncherPage = function () {
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
           25000, 2500, 800, true);
       }
-    });
+    }
+    go();
   }
 
   if (W.state.elfHttpAlreadyUp) {
@@ -409,6 +403,7 @@ W.launcher.openPayloadManagerPage = function () {
   try {
     if (W.els.nextTile) {
       W.els.nextTile.hidden = false;
+      try { if (W.uiSetPayload) W.uiSetPayload('plLauncher','OPEN',true); } catch (ePL) {}
       var ico = document.getElementById('nextTileIco');
       var title = document.getElementById('nextTileTitle');
       var url = document.getElementById('nextTileUrl');
@@ -433,6 +428,15 @@ W.launcher.openCompanionPage = function () {
   W.launcher.openElfLauncherPage();
 };
 
+W.bundledElfLauncherUrl = function () {
+  /* Absolute URL on the native :1022 registry (NETWORK:*). Not AppCache. */
+  try {
+    return new URL('payloads/elf-launcher.elf', window.location.href).href;
+  } catch (e) {
+    return 'http://127.0.0.1:1022/app/1.0.0/payloads/elf-launcher.elf';
+  }
+};
+
 W.launcher.openNow = function () {
   W.state.launcherHttpOpenStarted = false;
   var wantPm = (W.state.forceAutoloadName === 'pldmgr.elf')
@@ -442,10 +446,51 @@ W.launcher.openNow = function () {
     W.launcher.openPayloadManagerPage();
     return;
   }
+
+  function fail(msg) {
+    W.uiLog(msg, 'error');
+    if (W.ui && W.ui.toast) W.ui.toast(W.t('elfNotRunning') || 'Elf Launcher', msg, 'bad');
+  }
+  function openUp() {
+    W.state.elfHttpAlreadyUp = true;
+    if (W.ui && W.ui.toast) W.ui.toast(W.t('openingElf') || 'Opening Elf Launcher…', '', 'ok');
+    W.launcher.openElfLauncherPage();
+  }
+
+  if (W.ui && W.ui.toast) W.ui.toast('Elf Launcher', 'Opening…', 'ok');
+
+  /* 1) Already running (:1000) = installed launcher UI. */
   W.launcher.probeElfLauncherHttp(function (up) {
-    W.state.elfHttpAlreadyUp = !!up;
-    if (up) W.launcher.openElfLauncherPage();
-    else if (W.ui && W.ui.toast) W.ui.toast(W.t('elfNotRunning'), W.t('startJailbreak'), 'warn');
+    if (up) { openUp(); return; }
+
+    /* 2) Start installed console mirror via elfldr (file://). */
+    W.uiLog('Elf Launcher :1000 down - trying console mirror…', 'info');
+    W.launcher.sendUrlToElfldr(W.CONSOLE_MIRROR_URI, function () {
+      W.elauto.waitUp(8000, function (up2) {
+        if (up2) { openUp(); return; }
+
+        /* 3) Bundled tip from native HTTP registry (not AppCache). */
+        var tip = W.bundledElfLauncherUrl();
+        W.uiLog('Mirror miss - sending bundled tip via elfldr ?uri=' + tip, 'info');
+        W.launcher.sendUrlToElfldr(tip, function () {
+          W.elauto.waitUp(12000, function (up3) {
+            if (up3) { openUp(); return; }
+
+            /* 4) Last resort: exploit iframe resend (needs an active JB session). */
+            var asked = false;
+            try { asked = !!W.launcher.requestResendAutoload('elf-launcher.elf'); } catch (eR) {}
+            if (asked) {
+              W.elauto.waitUp(12000, function (up4) {
+                if (up4) openUp();
+                else fail('Could not start Elf Launcher. Run Jailbreak, or open the Elf Launcher home tile.');
+              });
+            } else {
+              fail('Elf Launcher is not running. Run Jailbreak first, or open the Elf Launcher home tile.');
+            }
+          });
+        });
+      });
+    });
   });
 };
 
@@ -471,6 +516,7 @@ W.launcher.onAutoloadResult = function (data) {
       W.uiLog('Autoload ok but send missing/skipped (bytes=' + String(data.bytes) + ')', 'warning');
     } else {
       W.uiLog('Sent ' + name + ' to elfldr :9021 (' + data.bytes + ' bytes).', 'success');
+      try { if (W.uiSetPayload) W.uiSetPayload('plElfldr','READY',true); } catch (eElf) {}
     }
     W.finishProgressSuccess(W.t('jailbreakSuccess'));
     W.recordRun('ok');

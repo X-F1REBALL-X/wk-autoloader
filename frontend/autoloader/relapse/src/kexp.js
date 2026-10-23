@@ -108,10 +108,21 @@ async function mapElf(name, p, chain, payloadDir) {
   if (base.low >>> 0 === 0xffffffff || base.low < 0x10000)
     throw new Error("kexp: " + name + " mmap failed");
 
-  const dwords = elf.length & ~3;
-  for (let offset = 0; offset < dwords; offset += 4)
-    p.write4(base.add32(offset), readU32(elf, offset));
-  for (let offset = dwords; offset < elf.length; offset++)
+  /* Post-JB only: same bytes as before, but write8 (one address select per
+     8 bytes) instead of write4. Halves slow primitive calls; no kernel/WebKit
+     race code touched. */
+  const words = new Uint32Array(
+    elf.buffer, elf.byteOffset, elf.length >>> 2);
+  const scratch = new int64(0, 0);
+  let i = 0;
+  for (; i + 1 < words.length; i += 2) {
+    scratch.low = words[i];
+    scratch.hi = words[i + 1];
+    p.write8(base.add32(i << 2), scratch);
+  }
+  if (i < words.length)
+    p.write4(base.add32(i << 2), words[i]);
+  for (let offset = words.length << 2; offset < elf.length; offset++)
     p.write1(base.add32(offset), elf[offset]);
   if (p.read4(base) >>> 0 !== 0x464c457f)
     throw new Error("kexp: " + name + " copy failed");

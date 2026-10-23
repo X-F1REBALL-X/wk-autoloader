@@ -4,7 +4,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Quick start
 
-1. Send [`WK_Autoloader_Store_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_V1.1.4.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.1.5.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.5/WK_Autoloader_Store_V1.1.5.elf) to elfldr on port `9021`.
 2. Wait for the install to finish, then reboot.
 3. Open the **Store** tile and press **Start Jailbreak**.
 
@@ -15,7 +15,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
-- [What's new in 1.1.4](#whats-new-in-114)
+- [What's new in 1.1.5](#whats-new-in-114)
 - [Building from source](#building-from-source)
 - [License](#license)
 - [Credits](#credits)
@@ -42,20 +42,20 @@ Store tile icon and background:
 
 ## Installation
 
-1. Send [`WK_Autoloader_Store_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_V1.1.4.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.1.5.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.5/WK_Autoloader_Store_V1.1.5.elf) to elfldr on port `9021`.
 2. Wait until the install finishes, then reboot the console.
 3. Open the **Store** tile on the home screen.
 4. Press **Start Jailbreak**. After Relapse completes, Elf Launcher opens automatically.
 
 ## Restore the PlayStation Store tile
 
-Send [`WK_Autoloader_Store_Restore_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_Restore_V1.1.4.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
+Send [`WK_Autoloader_Store_Restore_V1.1.5.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.5/WK_Autoloader_Store_Restore_V1.1.5.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
 
-## What's new in 1.1.4
+## What's new in 1.1.5
 
-- Clears the old WebKit cache before install, so every install fills the cache from scratch.
-- Store Restore also clears the WK cache.
-- Install no longer hangs if the cache download stalls.
+- Clears Store AppCache only when the manifest version changes (per user); backs up to /data/wkal/appcache_backup/ first.
+- Store Restore backs up then clears the Store AppCache origin for every user profile.
+- Install waits until Offline cache complete (does not finish early on a stall).
 - Removes old tile images before installing new ones.
 
 All versions are on the [releases page](https://github.com/X-F1REBALL-X/wk-autoloader/releases).
@@ -69,7 +69,7 @@ make store SDK=/path/to/ps5-payload-sdk BUILD_TYPE=stable
 make restore SDK=/path/to/ps5-payload-sdk
 ```
 
-Outputs `WK_Autoloader_Store_V1.1.4.elf` and `WK_Autoloader_Store_Restore_V1.1.4.elf`.
+Outputs `WK_Autoloader_Store_V1.1.5.elf` and `WK_Autoloader_Store_Restore_V1.1.5.elf`.
 
 ## License
 

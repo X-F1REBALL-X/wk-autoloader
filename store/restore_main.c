@@ -661,11 +661,14 @@ int main(void)
         toast("Warning: %d lock refs remain.", lock_refs);
     }
 
-    /* Uninstall also drops the WK AppCache so nothing stale is left. */
+    /* Uninstall: back up each profile, then clear only the Store AppCache
+     * origin (http://127.0.0.1:1022). Backups: /data/wkal/appcache_backup/. */
     signal(SIGPIPE, SIG_IGN);
-    int ac = appcache_clean_all_users(restore_log);
+    int ac = appcache_clean_store_all_users(restore_log);
     if (ac > 0)
-        toast("Removed WK browser AppCache (%d entries).", ac);
+        toast("Cleared Store AppCache (%d). Backup in /data/wkal/appcache_backup.", ac);
+    else
+        toast("Store AppCache clear done (backups in /data/wkal/appcache_backup).");
 
     toast("Store restored (%d rows). Reboot now.", app_rows + info_rows);
     return 0;

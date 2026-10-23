@@ -165,12 +165,6 @@ int main(void) {
      * and the browser is not opened over it. */
     wait_for_elf_sender();
 
-#ifdef IGNIKEY_STORE
-    /* Drop stale WK AppCache before the installer page is opened, so the
-     * page always does a real fill instead of "Caching 0%" -> Done. */
-    appcache_clean_all_users(wkali_log);
-#endif
-
     /* Initialize PS5 System Services */
     int err;
     if ((err = sceNetCtlInit()) == 0) {
@@ -185,6 +179,22 @@ int main(void) {
     } else {
         wkali_log("[WKALI] sceUserServiceInitialize failed: 0x%08X\n", err);
     }
+
+#ifdef IGNIKEY_STORE
+    /* Clear Store AppCache only when the manifest version changed for the
+     * foreground user. Never wipe other users; AppCache is per profile. */
+    {
+        int ac_uid = -1;
+        char ac_user[16];
+        if (sceUserServiceGetForegroundUser(&ac_uid) == 0 && ac_uid > 0) {
+            snprintf(ac_user, sizeof(ac_user), "%08x", (unsigned)ac_uid);
+            if (appcache_manifest_needs_refresh(ac_user, STORE_VERSION, wkali_log))
+                appcache_clean_store_user(ac_user, wkali_log);
+        } else {
+            wkali_log("[WKALI] AppCache: no foreground user, skip cache clear\n");
+        }
+    }
+#endif
 
     /* The homescreen app is installed/updated only AFTER the browser has
      * finished caching (via the /install route), so a shortcut is never

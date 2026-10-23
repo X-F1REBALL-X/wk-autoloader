@@ -13,6 +13,9 @@
 #include <microhttpd.h>
 
 #include "wkali.h"
+#ifdef IGNIKEY_STORE
+#include "appcache_clean.h"
+#endif
 #include "http_server.h"
 #include "file_registry.h"
 #include "inflate.h"
@@ -281,6 +284,56 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
                                                (void *)STORE_OFFLINE_PAGE,
                                                MHD_RESPMEM_PERSISTENT);
         MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
+    } else if (strcmp(url, "/wkal-cache-done") == 0) {
+        /* Installer signals a full AppCache fill for the foreground user. */
+        extern int sceUserServiceGetForegroundUser(int *);
+        char *done_body = malloc(32);
+        int uid = -1;
+        char user[16];
+        if (!done_body) {
+            const char *oom = "oom\n";
+            resp = MHD_create_response_from_buffer(strlen(oom), (void *)oom,
+                                                   MHD_RESPMEM_PERSISTENT);
+        } else {
+            if (sceUserServiceGetForegroundUser(&uid) == 0 && uid > 0) {
+                snprintf(user, sizeof(user), "%08x", (unsigned)uid);
+                if (appcache_manifest_write_version(user, STORE_VERSION, wkali_log) == 0)
+                    snprintf(done_body, 32, "ok\n");
+                else
+                    snprintf(done_body, 32, "write-failed\n");
+            } else {
+                snprintf(done_body, 32, "no-user\n");
+            }
+            resp = MHD_create_response_from_buffer(strlen(done_body), done_body,
+                                                   MHD_RESPMEM_MUST_FREE);
+            MHD_add_response_header(resp, "Content-Type", "text/plain");
+            MHD_add_response_header(resp, "Cache-Control", "no-store");
+        }
+    } else if (strcmp(url, "/wkal-appcache-restore") == 0) {
+        /* Restore this user's AppCache backup. Close the browser after. */
+        extern int sceUserServiceGetForegroundUser(int *);
+        char *restore_body = malloc(64);
+        int uid = -1;
+        char user[16];
+        int n = -1;
+        if (!restore_body) {
+            const char *oom = "oom\n";
+            resp = MHD_create_response_from_buffer(strlen(oom), (void *)oom,
+                                                   MHD_RESPMEM_PERSISTENT);
+        } else {
+            if (sceUserServiceGetForegroundUser(&uid) == 0 && uid > 0) {
+                snprintf(user, sizeof(user), "%08x", (unsigned)uid);
+                n = appcache_restore_user(user, wkali_log);
+            }
+            if (n < 0)
+                snprintf(restore_body, 64, "restore-failed\n");
+            else
+                snprintf(restore_body, 64, "restored %d\n", n);
+            resp = MHD_create_response_from_buffer(strlen(restore_body), restore_body,
+                                                   MHD_RESPMEM_MUST_FREE);
+            MHD_add_response_header(resp, "Content-Type", "text/plain");
+            MHD_add_response_header(resp, "Cache-Control", "no-store");
+        }
 #endif
     } else {
         const FileEntry *entry = registry_lookup(url);
@@ -344,7 +397,7 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
                     wkali_log("[WKALI] FORCE_EXPLOIT is set, caching relapse exploit\n");
                 } else {
                     if (fw <= 0.0f) {
-                        wkali_log("[WKALI] Firmware unknown, dropping umtx2 and slopkit from cache manifest\n");
+                        wkali_log("[WKALI] Firmware unknown, serving FULL cache manifest\n");
                     } else if (fw <= 5.50f) {
                         wkali_log("[WKALI] Detected firmware %.2f <= 5.50, caching umtx2 exploit\n", fw);
                     } else {
@@ -378,10 +431,11 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
                         } else if (strcmp(WKALI_FORCE_EXPLOIT, "relapse") == 0) {
                             if (strstr(line, "/umtx2/") || strstr(line, "/slopkit/")) keep = 0;
                         } else {
-                            /* auto: umtx2 <=5.50, relapse 7.00-13.60 (and >5.50).
-                               fw == 0 still drops the unused umtx2/slopkit trees. */
+                            /* auto: umtx2 <=5.50, relapse >5.50.
+                               fw unknown: keep the FULL manifest so offline
+                               cache is complete for any console. */
                             if (fw <= 0.0f) {
-                                if (strstr(line, "/umtx2/") || strstr(line, "/slopkit/")) keep = 0;
+                                keep = 1;
                             } else if (fw <= 5.50f) {
                                 if (strstr(line, "/slopkit/") || strstr(line, "/relapse/")) keep = 0;
                             } else {

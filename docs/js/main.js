@@ -4,7 +4,7 @@ var W = g.WKAL = g.WKAL || {};
 
 /* Proven startChain timings kept (mirror interval, relapse 12s warn, reveal 500ms). */
 W.startChain = function (skipElfSend) {
-  W.uiLog('IgniKey by X-F1REBALL-X', 'success');
+  W.uiLog('WK Autoloader by X-F1REBALL-X', 'success');
   if (W.els.statusMsg) W.els.statusMsg.textContent = W.t('jailbreakStarted');
   W.updateProgress(0, W.t('jailbreakStarted'));
   W.startProgressDriver();

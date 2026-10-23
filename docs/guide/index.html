@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>IgniKey V1.0.0 guide</title>
-<meta name="description" content="IgniKey turns the PS5 Store tile into a local jailbreak page with the Midnight UI."/>
-<link href="../ignikey-favicon-v12.png" rel="icon" type="image/png"/>
+<title>WK Autoloader Store 1.1.4 guide</title>
+<meta name="description" content="WK Autoloader Store turns the PS5 Store tile into WK Autoloader."/>
+<link href="../favicon.png" rel="icon" type="image/png"/>
 <style>
 :root{--bg:#060b1a;--card:#0e1630;--edge:#1f2c52;--ink:#e6edff;--mute:#8a9acb;--pri:#4f8cff;--accent:#ff7a1a}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -39,45 +39,43 @@ footer{padding:28px 0;color:var(--mute)}
 </head>
 <body>
 <header><div class="in">
-<img src="../ignikey-mark-v12.png" alt=""/>
-<div><div class="name">Igni<b>Key</b></div><div class="ver">V1.0.0</div></div>
-<nav><a href="#what">What it is</a><a href="#install">Install</a><a href="#undo">Undo</a><a href="#screens">Screenshots</a></nav>
+<img src="../logo.png" alt=""/>
+<div><div class="name">WK <b>Autoloader</b></div><div class="ver">Store v1.1.4</div></div>
+<nav><a href="#what">What it is</a><a href="#install">Install</a><a href="#undo">Restore</a></nav>
 </div></header>
 
 <section><div class="in">
 <h1>Jailbreak your PS5 from the <b>Store</b> tile.</h1>
-<p>IgniKey remaps the PS5 Store tile so it opens a local jailbreak page with the Midnight UI. Pick a chain, press Start, done.</p>
-<a class="btn pri" href="https://github.com/X-F1REBALL-X/IgniKey/releases/latest">Download V1.0.0</a>
-<a class="btn" href="https://github.com/X-F1REBALL-X/IgniKey">Source on GitHub</a>
+<p>WK Autoloader Store turns the PS5 Store tile into WK Autoloader. Open the Store icon, start the jailbreak (Relapse), and Elf Launcher opens when it finishes.</p>
+<a class="btn pri" href="https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest">Download v1.1.4</a>
+<a class="btn" href="https://github.com/X-F1REBALL-X/wk-autoloader">Source on GitHub</a>
 </div></section>
 
 <section id="what"><div class="in">
-<h2>What it is</h2>
-<p>A small ELF for the PS5. It points the Store tile (NPXS40047) to <code>http://127.0.0.1:1022/app/index.html</code> and serves the IgniKey page on port 1022. The page is cached on the console, so it keeps working after a reboot.</p>
-<p>Supported firmware: 7.00-13.60. Chain: Relapse.</p>
+<h2>Requirements</h2>
+<ol>
+<li>PS5 firmware <b>7.00-13.60</b> (Relapse)</li>
+<li><b>elfldr</b> listening on port <code>9021</code></li>
+<li>A way to send an ELF to elfldr (e.g. after a prior jailbreak)</li>
+</ol>
 </div></section>
 
 <section id="install"><div class="in">
 <h2>Install</h2>
 <ol>
-<li><b>Start elfldr.</b> Jailbreak once and make sure elfldr is listening on port 9021.</li>
-<li><b>Send the ELF.</b> Send <code>IgniKey_V1.0.0.elf</code> from the release to elfldr on port 9021.</li>
-<li><b>Open the Store.</b> The Store tile now opens IgniKey. Leave the chain on Auto or pick one, then press Start.</li>
+<li><b>Send the ELF.</b> Send <code>WK_Autoloader_Store_V1.1.4.elf</code> to elfldr on port 9021.</li>
+<li><b>Reboot.</b> Wait until install finishes, then reboot the console.</li>
+<li><b>Open the Store.</b> Open the Store tile on the home screen.</li>
+<li><b>Start Jailbreak.</b> Press Start Jailbreak. After Relapse completes, Elf Launcher opens automatically.</li>
 </ol>
+<p>The tile works offline after install; you only send the ELF again to reinstall or update. Each install clears the old WebKit cache first, so the cache is always filled from scratch.</p>
 </div></section>
 
 <section id="undo"><div class="in">
-<h2>Undo</h2>
-<p>To get the normal Store back, send <code>WK_Autoloader_Store_Restore_V1.1.3.elf</code> to elfldr on port 9021 the same way, then reboot the console.</p>
+<h2>Restore the PlayStation Store tile</h2>
+<p>Send <code>WK_Autoloader_Store_Restore_V1.1.4.elf</code> to elfldr on port 9021, then reboot. This also clears the WK cache.</p>
 </div></section>
 
-<section id="screens"><div class="in">
-<h2>Screenshots</h2>
-<div class="gal">
-<figure><img src="img/home.png" alt="Home"/><figcaption>Home</figcaption></figure>
-<figure><img src="img/settings.png" alt="Settings"/><figcaption>Settings</figcaption></figure>
-</div>
-</div></section>
 
 <footer><div class="in">Made by <a href="https://github.com/X-F1REBALL-X">X-F1REBALL-X</a>.</div></footer>
 </body>

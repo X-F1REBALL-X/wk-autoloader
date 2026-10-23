@@ -1,4 +1,4 @@
-/* IgniKey - home Start + separate Settings page */
+/* WK Autoloader - home Start + separate Settings page */
 html{font-synthesis:none}
 /* Single theme: midnight. data-theme on <html> is always midnight. */
 :root,html[data-theme=midnight]{--bg:#060b1a;--void:#0e1731;--deck:#0b1226;--card:#0e1630;--card2:#162040;--edge:#1f2c52;--edge2:#34487f;--ink:#e6edff;--ink2:#c3d0f5;--mute:#8a9acb;
@@ -163,7 +163,7 @@ iframe#exploit{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none
 .go.is-cancel{background:var(--deck);color:var(--pri);border:2px solid var(--pri);box-shadow:none}
 .go.is-cancel:focus,.go.is-cancel:hover{background:var(--pri);color:var(--onp)}
 
-/* IgniKey home: big centered Start, settings on its own page */
+/* WK Autoloader home: big centered Start, settings on its own page */
 #splash[hidden],#settingsPage[hidden],#loader[hidden]{display:none!important}
 .home-main,.settings-main{width:100%;align-items:center}
 .hero.card{position:relative;width:min(640px,100%);padding:2rem 2rem 1.6rem}

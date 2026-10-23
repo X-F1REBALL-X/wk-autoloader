@@ -309,7 +309,7 @@ W.ui.bindHome = function () {
     if (W.state.chainStarted) {
       /* v13: after a failed run Start reloads the page for a clean new attempt. No cancel mid-run. */
       if (W.state.runStage === 'fail' || W.state.stallRestart) {
-        try { sessionStorage.setItem('ignikey_start_now', '1'); } catch (eSs) {}
+        try { sessionStorage.setItem('wk_start_now', '1'); } catch (eSs) {}
         try { location.reload(); } catch (eRl) {}
       }
       return;
@@ -335,7 +335,7 @@ W.ui.bindHome = function () {
   }
 
   var startNow = false;
-  try { startNow = sessionStorage.getItem('ignikey_start_now') === '1'; sessionStorage.removeItem('ignikey_start_now'); } catch (eSn) {}
+  try { startNow = sessionStorage.getItem('wk_start_now') === '1'; sessionStorage.removeItem('wk_start_now'); } catch (eSn) {}
   if (startNow) setTimeout(beginJailbreak, 400);
   else if (auto && auto.checked) startCountdown();
 

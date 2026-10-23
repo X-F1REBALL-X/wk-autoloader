@@ -135,6 +135,10 @@ extern int sceUserServiceGetForegroundUser(int *);
 __attribute__((used)) volatile const char wkali_version_sig[] =
     "WKALI_VER:" WKAL_FULL_VERSION;
 
+#ifdef IGNIKEY_STORE
+#include "appcache_clean.h"
+#endif
+
 int main(void) {
     struct MHD_Daemon *daemon;
     pid_t pid;
@@ -160,6 +164,12 @@ int main(void) {
     /* Install the page only when it is missing. An existing page is left as is,
      * and the browser is not opened over it. */
     wait_for_elf_sender();
+
+#ifdef IGNIKEY_STORE
+    /* Drop stale WK AppCache before the installer page is opened, so the
+     * page always does a real fill instead of "Caching 0%" -> Done. */
+    appcache_clean_all_users(wkali_log);
+#endif
 
     /* Initialize PS5 System Services */
     int err;

@@ -159,7 +159,8 @@ clean:
 STORE_DIR   := store
 STORE_GEN   := $(STORE_DIR)/build
 STORE_SRCS  := $(STORE_DIR)/store_remap.c $(STORE_DIR)/tile_edit.c \
-               $(STORE_DIR)/files.c $(STORE_DIR)/toast.c
+               $(STORE_DIR)/files.c $(STORE_DIR)/toast.c \
+               $(STORE_DIR)/appcache_clean.c
 SQLITE_SRC  := $(STORE_DIR)/third_party/sqlite3.c
 SQLITE_FLAGS := -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
                 -DSQLITE_OMIT_WAL -DSQLITE_DEFAULT_MEMSTATUS=0 -w
@@ -198,10 +199,12 @@ RESTORE_ELF := WK_Autoloader_Store_Restore_V1.1.4.elf
 restore: $(RESTORE_ELF)
 
 $(RESTORE_ELF): $(STORE_DIR)/restore_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
+                $(STORE_DIR)/appcache_clean.c \
                 $(STORE_GEN)/sqlite3.o $(STORE_DIR)/config.h
 	@mkdir -p $(STORE_GEN)
 	@echo "Building $(RESTORE_ELF) (restore PS Store tile)..."
 	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ \
 		$(STORE_DIR)/restore_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
+		$(STORE_DIR)/appcache_clean.c \
 		$(STORE_GEN)/sqlite3.o $(LIBS)
 	$(STRIP) $@

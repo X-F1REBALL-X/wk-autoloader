@@ -13,6 +13,8 @@
  * their data. The current DBs are copied to RESTORE_PRE_DIR first.
  */
 #include <errno.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -20,6 +22,7 @@
 
 #include <sqlite3.h>
 
+#include "appcache_clean.h"
 #include "config.h"
 #include "files.h"
 #include "toast.h"
@@ -599,6 +602,15 @@ static void remove_lock_assets(void)
     rmdir(TILE_ASSET_DIR);
 }
 
+static void restore_log(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    va_end(ap);
+    fflush(stdout);
+}
+
 int main(void)
 {
     char concept[128];
@@ -648,6 +660,12 @@ int main(void)
     } else {
         toast("Warning: %d lock refs remain.", lock_refs);
     }
+
+    /* Uninstall also drops the WK AppCache so nothing stale is left. */
+    signal(SIGPIPE, SIG_IGN);
+    int ac = appcache_clean_all_users(restore_log);
+    if (ac > 0)
+        toast("Removed WK browser AppCache (%d entries).", ac);
 
     toast("Store restored (%d rows). Reboot now.", app_rows + info_rows);
     return 0;

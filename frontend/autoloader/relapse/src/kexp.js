@@ -134,7 +134,9 @@ async function connectToElfldr(p, chain) {
       if ((connected.low >>> 0) === 0) return fd;
       await chain.syscall(SYS_CLOSE, fd);
     }
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    /* 50ms: elfldr is usually up quickly after the listening log; 250ms
+       wasted up to ~200ms per missed connect. */
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
   throw new Error("elfldr is not listening on port 9021");

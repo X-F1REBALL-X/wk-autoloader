@@ -69,7 +69,7 @@ W.launcher.requestResendAutoload = function (name) {
 /* Proven openWhenHttpReady timings kept intact. */
 W.launcher.openWhenHttpReady = function (url, label, portHint, maxWaitMs, firstDelayMs, settleMs, allowAutoResend) {
   var started = Date.now();
-  var minWait = typeof firstDelayMs === 'number' ? firstDelayMs : 2000;
+  var minWait = typeof firstDelayMs === 'number' ? firstDelayMs : 500;
   var settle = typeof settleMs === 'number' ? settleMs : 0;
   var opened = false;
   var done = false;
@@ -353,7 +353,7 @@ W.launcher.openElfLauncherPage = function () {
       if (freshMirror) {
         W.uiLog('Console mirror Elf Launcher up - opening :1000 ...', 'success');
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
-          25000, 400, 800, false);
+          25000, 400, 300, false);
       } else if (alreadyUp) {
         W.uiLog('Elf Launcher :1000 already up - trigger Auto then open ...', 'success');
         triggerAuto();
@@ -362,8 +362,10 @@ W.launcher.openElfLauncherPage = function () {
           12000, 400, 400, false);
       } else {
         W.uiLog('elf-launcher.elf path - opening :1000 when ready ...', 'success');
+        /* firstDelay 600 / settle 300: ELF is already on the wire; 2.5s+0.8s
+           was leaving ~2s on the table after a cold send. */
         W.launcher.openWhenHttpReady(W.consoleHttpBase(1000), 'elf-launcher', '1000',
-          25000, 2500, 800, true);
+          25000, 600, 300, true);
       }
     }
     go();
@@ -414,7 +416,7 @@ W.launcher.openPayloadManagerPage = function () {
   } catch (eTile) {}
   W.uiLog('pldmgr.elf path - opening :8084 when ready ...', 'success');
   W.launcher.openWhenHttpReady(W.consoleHttpBase(8084), 'payload-manager', '8084',
-    45000, 2500, 800, true);
+    45000, 600, 300, true);
 };
 
 W.launcher.openCompanionPage = function () {

@@ -4,7 +4,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Quick start
 
-1. Send [`WK_Autoloader_Store_V1.1.7.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.7/WK_Autoloader_Store_V1.1.7.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.1.8.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.8/WK_Autoloader_Store_V1.1.8.elf) to elfldr on port `9021`.
 2. Wait for the install to finish, then reboot.
 3. Open the **Store** tile and press **Start Jailbreak**.
 
@@ -15,7 +15,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
-- [What's new in 1.1.7](#whats-new-in-114)
+- [What's new in 1.1.8](#whats-new-in-114)
 - [Building from source](#building-from-source)
 - [License](#license)
 - [Credits](#credits)
@@ -42,16 +42,16 @@ Store tile icon and background:
 
 ## Installation
 
-1. Send [`WK_Autoloader_Store_V1.1.7.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.7/WK_Autoloader_Store_V1.1.7.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.1.8.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.8/WK_Autoloader_Store_V1.1.8.elf) to elfldr on port `9021`.
 2. Wait until the install finishes, then reboot the console.
 3. Open the **Store** tile on the home screen.
 4. Press **Start Jailbreak**. After Relapse completes, Elf Launcher opens automatically.
 
 ## Restore the PlayStation Store tile
 
-Send [`WK_Autoloader_Store_Restore_V1.1.7.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.7/WK_Autoloader_Store_Restore_V1.1.7.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
+Send [`WK_Autoloader_Store_Restore_V1.1.8.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.8/WK_Autoloader_Store_Restore_V1.1.8.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
 
-## What's new in 1.1.7
+## What's new in 1.1.8
 
 - Clears Store AppCache only when the manifest version changes (per user); backs up to /data/wkal/appcache_backup/ first.
 - Store Restore backs up then clears the Store AppCache origin for every user profile.
@@ -69,7 +69,7 @@ make store SDK=/path/to/ps5-payload-sdk BUILD_TYPE=stable
 make restore SDK=/path/to/ps5-payload-sdk
 ```
 
-Outputs `WK_Autoloader_Store_V1.1.7.elf` and `WK_Autoloader_Store_Restore_V1.1.7.elf`.
+Outputs `WK_Autoloader_Store_V1.1.8.elf` and `WK_Autoloader_Store_Restore_V1.1.8.elf`.
 
 ## License
 

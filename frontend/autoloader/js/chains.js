@@ -148,10 +148,14 @@ W.startStallWatch = function () {
 
 W.recordRun = function (result) {
   var dur = W.state.elapsedStart ? Date.now() - W.state.elapsedStart : 0;
+  var marks = (W.state.timing && W.state.timing.marks) ? W.state.timing.marks : {};
+  var totalMs = W.state.timing ? (Date.now() - W.state.timing.t0) : dur;
   W.saveHistoryEntry({
     chain: W.state.exploitMode || '-',
     result: result,
     duration: W.formatElapsed(dur),
+    ms: totalMs,
+    timing: marks,
     stage: W.state.runStage || '-',
     fw: (W.detectFirmware() || {}).str || '-',
     at: Date.now()

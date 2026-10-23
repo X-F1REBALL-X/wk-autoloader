@@ -262,14 +262,17 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
 
     /* Collect group ids for our origin / manifest URL prefix. */
     if (sqlite3_prepare_v2(db,
-            "SELECT id FROM CacheGroups WHERE origin = ?1 OR manifestURL LIKE ?2",
+            "SELECT id FROM CacheGroups WHERE origin = ?1 OR origin = ?2 "
+            "OR manifestURL LIKE ?3",
             -1, &st, NULL) != SQLITE_OK) {
         exec_sql(db, "ROLLBACK");
         sqlite3_close(db);
         return -1;
     }
-    sqlite3_bind_text(st, 1, APPCACHE_STORE_ORIGIN, -1, SQLITE_STATIC);
-    sqlite3_bind_text(st, 2, like, -1, SQLITE_STATIC);
+    /* WebKit stores origin as http_127.0.0.1_1022; also match URL form. */
+    sqlite3_bind_text(st, 1, APPCACHE_STORE_ORIGIN_KEY, -1, SQLITE_STATIC);
+    sqlite3_bind_text(st, 2, APPCACHE_STORE_ORIGIN, -1, SQLITE_STATIC);
+    sqlite3_bind_text(st, 3, like, -1, SQLITE_STATIC);
 
     while (sqlite3_step(st) == SQLITE_ROW) {
         sqlite3_int64 gid = sqlite3_column_int64(st, 0);
@@ -319,9 +322,10 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
     {
         sqlite3_stmt *ost = NULL;
         if (sqlite3_prepare_v2(db,
-                "DELETE FROM Origins WHERE origin = ?",
+                "DELETE FROM Origins WHERE origin = ?1 OR origin = ?2",
                 -1, &ost, NULL) == SQLITE_OK) {
-            sqlite3_bind_text(ost, 1, APPCACHE_STORE_ORIGIN, -1, SQLITE_STATIC);
+            sqlite3_bind_text(ost, 1, APPCACHE_STORE_ORIGIN_KEY, -1, SQLITE_STATIC);
+            sqlite3_bind_text(ost, 2, APPCACHE_STORE_ORIGIN, -1, SQLITE_STATIC);
             sqlite3_step(ost);
             sqlite3_finalize(ost);
         }

@@ -672,14 +672,24 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
       /* Relapse floors calibrated to real stages. Snap via bumpProgressFloor
          (display must not lag during kernel quiet). Ohad: JB used to show ~58%
          at elfldr because eased display never caught up while the driver was paused. */
-      if (/Offsets ready|Firmware:/.test(textLine)) W.bumpProgressFloor(12);
-      else if (/Starting WebKit/.test(textLine)) W.bumpProgressFloor(22);
-      else if (/ARW ready|WebKit base/.test(textLine)) W.bumpProgressFloor(38);
-      else if (/Worker/.test(textLine)) W.bumpProgressFloor(55);
-      else if (/ucred_addr/.test(textLine)) {
+      if (/Offsets ready|Firmware:/.test(textLine)) {
+        try { W.markTiming('relapse_offsets'); } catch (eM) {}
+        W.bumpProgressFloor(12);
+      } else if (/Starting WebKit/.test(textLine)) {
+        try { W.markTiming('relapse_webkit'); } catch (eM) {}
+        W.bumpProgressFloor(22);
+      } else if (/ARW ready|WebKit base/.test(textLine)) {
+        try { W.markTiming('relapse_arw'); } catch (eM) {}
+        W.bumpProgressFloor(38);
+      } else if (/Worker/.test(textLine)) {
+        try { W.markTiming('relapse_worker'); } catch (eM) {}
+        W.bumpProgressFloor(55);
+      } else if (/ucred_addr/.test(textLine)) {
+        try { W.markTiming('relapse_kernel'); } catch (eM) {}
         if (W.enterKernelQuiet) W.enterKernelQuiet();
         W.bumpProgressFloor(75);
       } else if (/elfldr|listening on port 9021|kernel exploit complete|payloads loaded|kernel chain complete/i.test(textLine)) {
+        try { W.markTiming('relapse_elfldr'); } catch (eM) {}
         if (W.leaveKernelQuiet) W.leaveKernelQuiet();
         W.bumpProgressFloor(96);
         if (/elfldr|listening on port 9021/i.test(textLine)) {
@@ -687,9 +697,11 @@ var p2jbLastSummaryText = '', p2jbEarlyLinesLogged = 0, p2jbLastPhaseStep = '', 
           W._maybeApply('relapse-elfldr');
         }
       } else if (/\bPipes\b/i.test(textLine) && /ready|established|located|fast read/i.test(textLine)) {
+        try { W.markTiming('relapse_pipes'); } catch (eM) {}
         if (W.enterKernelQuiet) W.enterKernelQuiet();
         W.bumpProgressFloor(80);
       } else if (/kernel/i.test(textLine)) {
+        try { W.markTiming('relapse_kernel'); } catch (eM) {}
         if (W.enterKernelQuiet) W.enterKernelQuiet();
         if (/fast read and write ready/i.test(textLine)) W.bumpProgressFloor(80);
         else if (/privileges ready/i.test(textLine)) W.bumpProgressFloor(90);

@@ -132,6 +132,33 @@ W.formatElapsed = function (ms) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 };
 
+/* Per-run millisecond marks (jb_start = 0). Logged as [time] ... */
+W.resetTiming = function () {
+  W.state.timing = { t0: Date.now(), marks: {}, order: [] };
+};
+W.markTiming = function (name) {
+  if (!name) return;
+  if (!W.state.timing) W.resetTiming();
+  if (W.state.timing.marks[name] != null) return;
+  var ms = Date.now() - W.state.timing.t0;
+  W.state.timing.marks[name] = ms;
+  W.state.timing.order.push(name);
+  try { W.uiLog('[time] ' + name + ' +' + ms + 'ms', 'info'); } catch (e) {}
+};
+W.logTimingSummary = function () {
+  if (!W.state.timing) return '';
+  var parts = [], i, n, total;
+  for (i = 0; i < W.state.timing.order.length; i++) {
+    n = W.state.timing.order[i];
+    parts.push(n + '=' + W.state.timing.marks[n] + 'ms');
+  }
+  total = Date.now() - W.state.timing.t0;
+  try {
+    W.uiLog('[time] summary ' + parts.join(' | ') + ' | total=' + total + 'ms', 'success');
+  } catch (e2) {}
+  return { marks: W.state.timing.marks, total: total };
+};
+
 /* Local wall-clock for the JB run (English digits, no new i18n keys). */
 W.formatLocalDateTime = function (ms) {
   var d = new Date(typeof ms === 'number' ? ms : Date.now());
@@ -242,6 +269,7 @@ W.resumeProgressDriver = function () {
 };
 
 W.enterKernelQuiet = function () {
+  try { W.markTiming('kernel_quiet'); } catch (eK) {}
   /* Relapse kernel stage: stop 50ms creep + conic-gradient thrash on #progressRing. */
   if (W.state.progressKernelQuiet) return;
   W.state.progressKernelQuiet = true;
@@ -315,6 +343,7 @@ W.uiSetPayload = function (id, tag, on) {
 };
 
 W.finishProgressSuccess = function (message) {
+  try { W.markTiming('jb_done'); W.logTimingSummary(); } catch (eT) {}
   W.state.progressDone = true;
   W.state.runStage = 'done';
   W.state.progressKernelQuiet = false;
@@ -343,6 +372,7 @@ W.finishProgressSuccess = function (message) {
 };
 
 W.finishProgressFail = function (message) {
+  try { W.markTiming('jb_fail'); W.logTimingSummary(); } catch (eT) {}
   W.state.progressDone = true;
   W.state.runStage = 'fail';
   W.state.progressKernelQuiet = false;

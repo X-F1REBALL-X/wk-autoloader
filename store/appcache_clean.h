@@ -4,8 +4,11 @@
 typedef void (*appcache_log_fn)(const char *fmt, ...);
 
 /* Store origin served by the installer on :1022. AppCache groups for this
- * origin are the only ones we remove on a selective wipe. */
+ * origin are the only ones we remove on a selective wipe.
+ * WebKit Origins.origin uses underscores (http_127.0.0.1_1022); manifestURL
+ * keeps the normal URL form. Match both. */
 #define APPCACHE_STORE_ORIGIN "http://127.0.0.1:1022"
+#define APPCACHE_STORE_ORIGIN_KEY "http_127.0.0.1_1022"
 
 /* Per-user backups live under /data/wkal/appcache_backup/<userid>/. */
 #define APPCACHE_BACKUP_ROOT "/data/wkal/appcache_backup"

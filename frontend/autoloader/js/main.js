@@ -5,6 +5,14 @@ var W = g.WKAL = g.WKAL || {};
 /* Proven startChain timings kept (mirror interval, relapse 12s warn, reveal 500ms). */
 W.startChain = function (skipElfSend) {
   W.uiLog('WK Autoloader by X-F1REBALL-X', 'success');
+  try {
+    W.resetTiming();
+    W.markTiming('jb_start');
+    var ac = (typeof applicationCache !== 'undefined') ? applicationCache : null;
+    var st = ac ? ac.status : -1;
+    /* 1 = IDLE (master entry already in AppCache). */
+    W.uiLog('[time] page_from_cache status=' + st + (st === 1 ? ' IDLE' : ''), 'info');
+  } catch (eT0) {}
   if (W.els.statusMsg) { W.els.statusMsg.textContent = ''; W.els.statusMsg.style.display = 'none'; }
   W.updateProgress(0, W.t('jailbreakStarted'));
   W.startProgressDriver();
@@ -131,7 +139,13 @@ W.startChain = function (skipElfSend) {
   if (picked === 'p2jb') W.clearSlopkitState();
   try {
     if (!W.els.exploit) throw new Error('missing #exploit iframe');
+    try {
+      W.els.exploit.onload = function () {
+        try { W.markTiming('iframe_load'); } catch (eL) {}
+      };
+    } catch (eOn) {}
     W.els.exploit.src = W.state.EXPLOIT_URL;
+    try { W.markTiming('iframe_request'); } catch (eR) {}
     /* Real milestone: exploit document requested (quiet UI has no fake creep). */
     if (W.bumpProgressFloor) W.bumpProgressFloor(5);
     W.uiLog('Exploit iframe: ' + W.state.EXPLOIT_URL, 'info');
@@ -278,7 +292,10 @@ window.addEventListener('load', function () {
     if (W.elauto && W.elauto.prefetch && !W.state.chainStarted) W.elauto.prefetch();
   }, 900);
   try {
-    W.uiLog('[boot] ui ready in ' + (Date.now() - t0) + 'ms', 'info');
+    var ac = (typeof applicationCache !== 'undefined') ? applicationCache : null;
+    var st = ac ? ac.status : -1;
+    W.uiLog('[boot] ui ready in ' + (Date.now() - t0) + 'ms; AppCache status=' + st
+      + (st === 1 ? ' (IDLE/cached)' : ''), 'info');
   } catch (e) {}
 });
 })(typeof window !== 'undefined' ? window : this);

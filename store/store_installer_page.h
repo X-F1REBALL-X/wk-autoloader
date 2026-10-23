@@ -208,7 +208,6 @@ static const char STORE_INSTALLER_PAGE[] =
     "  function loadPointerFrame(){\n"
     "    /* Small separate AppCache (start page + offline notice) so the tile shows a\n"
     "       clear message when the ELF is not running, even if the big cache stalls. */\n"
-    "    try{ var pf=document.createElement('iframe'); pf.style.cssText='position:absolute;width:1px;height:1px;left:-9999px;top:-9999px;border:0;visibility:hidden'; pf.src='/pointer-fill.html'; document.body.appendChild(pf); }catch(e){}\n"
     "  }\n"
     "  function finishBackground(){\n"
     "    /* Stall watchdog: the tile is installed, so stop waiting and keep the\n"

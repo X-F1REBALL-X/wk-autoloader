@@ -2,8 +2,6 @@
 
 Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak, and Elf Launcher opens when it finishes.
 
-![WK Autoloader Store tile art](store/pic0.png)
-
 ## Quick start
 
 1. Send [`WK_Autoloader_Store_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_V1.1.4.elf) to elfldr on port `9021`.

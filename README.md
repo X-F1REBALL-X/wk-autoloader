@@ -54,7 +54,7 @@ Send [`WK_Autoloader_Store_Restore_V1.2.0.elf`](https://github.com/X-F1REBALL-X/
 
 ## What's new in 1.2.0
 
-Changes since 1.1.3.
+Changes since 1.1.4.
 
 - Install keeps the existing Store AppCache. No more automatic wipe.
 - A backup is made before any cache clear (/data/wkal/appcache_backup/).

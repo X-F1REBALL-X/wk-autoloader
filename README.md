@@ -11,7 +11,6 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 ## Contents
 
 - [Features](#features)
-- [Gallery](#gallery)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
@@ -28,12 +27,6 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - Works offline after install. Send the ELF again only to reinstall or update.
 - Each install clears the old WebKit cache first, so the cache is always filled from scratch.
 - A separate Restore ELF puts the original PlayStation Store tile back.
-
-## Gallery
-
-Store tile icon and background:
-
-<p><img src="store/icon0.png" alt="Store tile icon" width="200"> <img src="store/pic0.png" alt="Store tile background" width="480"></p>
 
 ## Requirements
 

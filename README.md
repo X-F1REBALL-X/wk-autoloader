@@ -15,7 +15,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
-- [What's new in 1.2.0](#whats-new-in-114)
+- [What's new in 1.2.0](#whats-new-in-120)
 - [Building from source](#building-from-source)
 - [License](#license)
 - [Credits](#credits)
@@ -53,10 +53,15 @@ Send [`WK_Autoloader_Store_Restore_V1.2.0.elf`](https://github.com/X-F1REBALL-X/
 
 ## What's new in 1.2.0
 
-- Clears Store AppCache only when the manifest version changes (per user); backs up to /data/wkal/appcache_backup/ first.
-- Store Restore backs up then clears the Store AppCache origin for every user profile.
-- Install waits until Offline cache complete (does not finish early on a stall).
-- Removes old tile images before installing new ones.
+Changes since 1.1.3.
+
+- Install keeps the existing Store AppCache. No more automatic wipe.
+- A backup is made before any cache clear (/data/wkal/appcache_backup/).
+- Store Restore clears only the Store AppCache origin, nothing else.
+- The installer waits for "Offline cache complete" before it finishes.
+- When the firmware is unknown, the full manifest is used.
+- Faster jailbreak: about 3.3s down to about 2.9s (quicker elfldr poll and faster ELF copy).
+- Per-stage timing in ms, shown in the log and in Recent.
 
 All versions are on the [releases page](https://github.com/X-F1REBALL-X/wk-autoloader/releases).
 

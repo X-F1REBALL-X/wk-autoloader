@@ -257,7 +257,15 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
     sqlite3_finalize(st);
     st = NULL;
 
-    exec_sql(db, "BEGIN");
+    /* Wait for the browser's lock instead of failing at once. */
+    sqlite3_busy_timeout(db, 5000);
+    if (exec_sql(db, "BEGIN IMMEDIATE") != 0) {
+        if (log)
+            log("[WKALI] AppCache: db busy (%s), close the browser and retry\n",
+                sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return -1;
+    }
     snprintf(like, sizeof(like), "%s/%%", APPCACHE_STORE_ORIGIN);
 
     /* Collect group ids for our origin / manifest URL prefix. */
@@ -331,7 +339,16 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
         }
     }
 
-    exec_sql(db, "COMMIT");
+    if (exec_sql(db, "COMMIT") != 0) {
+        if (log)
+            log("[WKALI] AppCache: commit failed (%s), nothing changed\n",
+                sqlite3_errmsg(db));
+        exec_sql(db, "ROLLBACK");
+        sqlite3_close(db);
+        return -1;
+    }
+    /* Fold the WAL back into the main file so the change is on disk. */
+    exec_sql(db, "PRAGMA wal_checkpoint(TRUNCATE)");
     sqlite3_close(db);
     if (log)
         log("[WKALI] AppCache: selective wipe %s (groups=%d caches=%d)\n",

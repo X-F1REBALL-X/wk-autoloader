@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #include <sqlite3.h>
@@ -127,6 +128,12 @@ static int install_assets(void)
         wkali_log("[STORE] mkdir %s failed\n", TILE_ASSET_DIR);
         return -1;
     }
+
+    /* Start clean: drop the tile art this installer owns (left by any older
+     * version) so only the current build's files end up on the console. */
+    if (unlink(TILE_ASSET_FILE) == 0) wkali_log("[STORE] removed old %s\n", TILE_ASSET_FILE);
+    if (unlink(TILE_PIC0_FILE) == 0) wkali_log("[STORE] removed old %s\n", TILE_PIC0_FILE);
+    if (unlink(TILE_PIC1_FILE) == 0) wkali_log("[STORE] removed old %s\n", TILE_PIC1_FILE);
 
     r = files_store_if_changed(TILE_ASSET_FILE, g_icon_png, g_icon_png_len);
     if (r < 0) {

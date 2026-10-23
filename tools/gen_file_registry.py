@@ -307,7 +307,7 @@ def build_manifest(files, version, build_time, app_dir, pointer_path, marker_pat
     redirecting into it."""
     lines = [
         "CACHE MANIFEST",
-        f"# WK Autoloader v{version} ignikey-v34 by X-F1REBALL-X (built {build_time}) - "
+        f"# WK Autoloader v{version} store-v{os.environ.get('STORE_VERSION', 'dev')} ignikey-v34 by X-F1REBALL-X (built {build_time}) - "
         "written by tools/gen_file_registry.py, do not edit.",
         "",
         "CACHE:",

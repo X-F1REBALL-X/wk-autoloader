@@ -58,6 +58,7 @@ static const char STORE_INSTALLER_PAGE[] =
     "  var VER='1.0.0',cacheReady=false,installed=false,fr=null,lastReload=0,cachePct=0,cacheLoaded=0,cacheTotal=0;\n"
     "  var statusWord='Preparing',installTries=0,MAX_TRIES=2,pulseTimer=0;\n"
     "  var finishWaitStart=0,verTried='',discoverDone=false;\n"
+    "  var STALL_MS=20000,bestLoaded=-1,lastAdvance=0,bgFill=false;\n"
     "  function looksLikeVer(s){\n"
     "    s=String(s||'').trim();\n"
     "    return /^[0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9._+-]*$/.test(s) && s.length<80;\n"
@@ -177,6 +178,8 @@ static const char STORE_INSTALLER_PAGE[] =
     "        installed=true; installStarted=false;\n"
     "        target=Math.max(target,70);\n"
     "        statusWord='Caching…';\n"
+    "        lastAdvance=Date.now();\n"
+    "        loadPointerFrame();\n"
     "        loadFrame();\n"
     "        waitComplete();\n"
     "      } else {\n"
@@ -202,6 +205,23 @@ static const char STORE_INSTALLER_PAGE[] =
     "    };\n"
     "    try{ xhr.send(); }catch(e){ stopPulse(); installStarted=false; fail('Tile update could not start'); }\n"
     "  }\n"
+    "  function loadPointerFrame(){\n"
+    "    /* Small separate AppCache (start page + offline notice) so the tile shows a\n"
+    "       clear message when the ELF is not running, even if the big cache stalls. */\n"
+    "    try{ var pf=document.createElement('iframe'); pf.style.cssText='position:absolute;width:1px;height:1px;left:-9999px;top:-9999px;border:0;visibility:hidden'; pf.src='/pointer-fill.html'; document.body.appendChild(pf); }catch(e){}\n"
+    "  }\n"
+    "  function finishBackground(){\n"
+    "    /* Stall watchdog: the tile is installed, so stop waiting and keep the\n"
+    "       cache iframe filling (and retrying) in the background. */\n"
+    "    if(done) return;\n"
+    "    try{ console.log('[wkal-install] cache stalled at '+cacheLoaded+'/'+cacheTotal+', finishing in background'); }catch(eL){}\n"
+    "    done=true; bgFill=true; stopPulse(); target=100;\n"
+    "    try{document.body.className='done';}catch(e){}\n"
+    "    statusWord='Done'; ttlEl.textContent='Store tile ready';\n"
+    "    subEl.textContent='Offline files are still caching in the background. You can return to the home screen.';\n"
+    "    (function fin(){ display+=(100-display)*0.25; if(display>=99.5){ display=100; show(100); return; } show(display); raf(fin); })();\n"
+    "    (function retry(){ if(!bgFill) return; if(Date.now()-lastReload>60000) loadFrame(); setTimeout(retry,5000); })();\n"
+    "  }\n"
     "  function loadFrame(){\n"
     "    try{\n"
     "      lastReload=Date.now();\n"
@@ -214,14 +234,15 @@ static const char STORE_INSTALLER_PAGE[] =
     "  }\n"
     "  window.addEventListener('message',function(e){\n"
     "    var d=String(e.data||'');\n"
-    "    if(d==='wkal-cache-ready'){ cacheReady=true; cachePct=100; recompute(); }\n"
-    "    else if(d==='wkal-cache-error'){ cacheReady=false; if(installed) setTimeout(loadFrame,200); }\n"
+    "    if(d==='wkal-cache-ready'){ cacheReady=true; cachePct=100; if(bgFill){ bgFill=false; subEl.textContent='Offline cache complete. Opening WK Autoloader…'; setTimeout(function(){ window.location.replace(APP); },600); return; } recompute(); }\n"
+    "    else if(d==='wkal-cache-error'){ cacheReady=false; if(installed) setTimeout(loadFrame,bgFill?5000:200); }\n"
     "    else if(d.indexOf('wkal-cache-progress:')===0){\n"
     "      var parts=d.slice(20).split('/');\n"
     "      if(parts.length===2){\n"
     "        cacheLoaded=parseInt(parts[0],10)||0;\n"
     "        cacheTotal=parseInt(parts[1],10)||0;\n"
     "        if(cacheTotal>0) cachePct=Math.floor(cacheLoaded*100/cacheTotal);\n"
+    "        if(cacheLoaded>bestLoaded){ bestLoaded=cacheLoaded; lastAdvance=Date.now(); }\n"
     "      } else {\n"
     "        var p=parseInt(d.slice(20),10);\n"
     "        if(p>=0) cachePct=Math.min(100,p);\n"
@@ -232,7 +253,10 @@ static const char STORE_INSTALLER_PAGE[] =
     "  function waitComplete(){\n"
     "    if(done||failed) return;\n"
     "    recompute();\n"
-    "    if(!cacheReady){ if(Date.now()-lastReload>30000) loadFrame(); setTimeout(waitComplete,80); return; }\n"
+    "    if(!cacheReady){\n"
+    "      if(installed && lastAdvance && Date.now()-lastAdvance>STALL_MS){ finishBackground(); return; }\n"
+    "      if(Date.now()-lastReload>30000) loadFrame(); setTimeout(waitComplete,80); return;\n"
+    "    }\n"
     "    if(!finishWaitStart) finishWaitStart=Date.now();\n"
     "    function giveUpOk(why){\n"
     "      try{ console.log('[wkal-install] finishing without __complete__: '+why); }catch(eL){}\n"
@@ -312,4 +336,40 @@ static const char STORE_CACHE_FILL_PAGE[] =
     "</script></body></html>\n"
     "\n"
     ""
+;
+
+/* Tiny AppCache holding only the Store-tile start page (/app/index.html) and an
+ * offline notice. Filled right after the tile install so reopening the tile
+ * with the ELF not running shows a message instead of a WebKit network error.
+ * The version line changes per store release so old copies are replaced. */
+#ifndef STORE_VERSION
+#define STORE_VERSION "dev"
+#endif
+static const char STORE_POINTER_MANIFEST[] =
+    "CACHE MANIFEST\n"
+    "# WK Autoloader Store v" STORE_VERSION " pointer cache\n"
+    "\n"
+    "CACHE:\n"
+    "/app/index.html\n"
+    "/wkal-offline.html\n"
+    "\n"
+    "NETWORK:\n"
+    "*\n"
+    "\n"
+    "FALLBACK:\n"
+    "/app/ /wkal-offline.html\n"
+;
+
+static const char STORE_POINTER_FILL_PAGE[] =
+    "<!doctype html>\n"
+    "<html manifest=\"/wkal-pointer.appcache\"><head><meta charset=\"utf-8\"/><title>cache</title></head><body></body></html>\n"
+;
+
+static const char STORE_OFFLINE_PAGE[] =
+    "<!doctype html>\n"
+    "<html lang=\"en\"><head><meta charset=\"utf-8\"/><title>WK Autoloader</title>\n"
+    "<style>html,body{height:100%;margin:0}body{font-family:system-ui,sans-serif;background:#0d0e14;color:#f4ece0;display:flex;align-items:center;justify-content:center;text-align:center}"
+    "h1{font-size:44px;margin:0 0 18px}p{font-size:24px;color:#b9b0a3;margin:0}</style></head>\n"
+    "<body><div><h1>WK Autoloader is not running</h1>"
+    "<p>Run the ELF again, then reopen the Store tile.</p></div></body></html>\n"
 ;

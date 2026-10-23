@@ -99,7 +99,7 @@ $(FILE_REGISTRY_STAMP): $(FRONTEND_FILES) version icons payload-deps companions
 	cp -R $(FRONTEND_AUTOLOADER)/. $(FRONTEND_STAGE)/app/$$V/ && \
 	echo "$$V" > $(FRONTEND_STAGE)/VERSION
 	@echo "Generating file registry from $(FRONTEND_STAGE)/..."
-	$(PYTHON) tools/gen_file_registry.py $(FRONTEND_STAGE) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C)
+	STORE_VERSION=$(STORE_VERSION) $(PYTHON) tools/gen_file_registry.py $(FRONTEND_STAGE) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C)
 	@touch $(FILE_REGISTRY_STAMP)
 
 $(ELF): $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(SRCS) $(ICON0)
@@ -148,7 +148,7 @@ clean:
 	rm -rf $(FRONTEND_STAGE)
 	rm -f $(ELF) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(FILE_REGISTRY_STAMP)
 	rm -f $(WKAL_HOST) $(VERSION_HEADER)
-	rm -rf $(STORE_GEN) $(STORE_ELF) WK_Autoloader_Store_Restore_V1.1.3.elf
+	rm -rf $(STORE_GEN) $(STORE_ELF) WK_Autoloader_Store_Restore_V1.1.4.elf
 
 .PHONY: all host dev clean payload-deps companions
 
@@ -163,9 +163,9 @@ STORE_SRCS  := $(STORE_DIR)/store_remap.c $(STORE_DIR)/tile_edit.c \
 SQLITE_SRC  := $(STORE_DIR)/third_party/sqlite3.c
 SQLITE_FLAGS := -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
                 -DSQLITE_OMIT_WAL -DSQLITE_DEFAULT_MEMSTATUS=0 -w
-STORE_VERSION := 1.1.3
-STORE_ELF   := WK_Autoloader_Store_V1.1.3.elf
-STORE_CFLAGS := $(CFLAGS) -DIGNIKEY_STORE -I$(STORE_DIR) -I$(STORE_GEN) \
+STORE_VERSION := 1.1.4
+STORE_ELF   := WK_Autoloader_Store_V1.1.4.elf
+STORE_CFLAGS := $(CFLAGS) -DIGNIKEY_STORE -DSTORE_VERSION='"$(STORE_VERSION)"' -I$(STORE_DIR) -I$(STORE_GEN) \
                 -I$(STORE_DIR)/third_party
 
 .PHONY: store
@@ -193,7 +193,7 @@ $(STORE_ELF): $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(SRCS) $(STORE_SRCS) \
 
 # Full Store restore: undoes NPXS40047 remap (backup or built-in stock).
 # Send to elfldr :9021, then reboot. Not linked into the Store installer ELF.
-RESTORE_ELF := WK_Autoloader_Store_Restore_V1.1.3.elf
+RESTORE_ELF := WK_Autoloader_Store_Restore_V1.1.4.elf
 .PHONY: restore
 restore: $(RESTORE_ELF)
 

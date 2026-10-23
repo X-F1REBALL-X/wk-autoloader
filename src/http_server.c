@@ -264,6 +264,23 @@ enum MHD_Result http_on_request(void *cls, struct MHD_Connection *conn,
                                                MHD_RESPMEM_PERSISTENT);
         MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
         MHD_add_response_header(resp, "Cache-Control", "no-cache");
+    } else if (strncmp(url, "/pointer-fill.html", 18) == 0) {
+        resp = MHD_create_response_from_buffer(sizeof(STORE_POINTER_FILL_PAGE) - 1,
+                                               (void *)STORE_POINTER_FILL_PAGE,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
+        MHD_add_response_header(resp, "Cache-Control", "no-cache");
+    } else if (strcmp(url, "/wkal-pointer.appcache") == 0) {
+        resp = MHD_create_response_from_buffer(sizeof(STORE_POINTER_MANIFEST) - 1,
+                                               (void *)STORE_POINTER_MANIFEST,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/cache-manifest");
+        MHD_add_response_header(resp, "Cache-Control", "no-cache");
+    } else if (strcmp(url, "/wkal-offline.html") == 0) {
+        resp = MHD_create_response_from_buffer(sizeof(STORE_OFFLINE_PAGE) - 1,
+                                               (void *)STORE_OFFLINE_PAGE,
+                                               MHD_RESPMEM_PERSISTENT);
+        MHD_add_response_header(resp, "Content-Type", "text/html; charset=utf-8");
 #endif
     } else {
         const FileEntry *entry = registry_lookup(url);

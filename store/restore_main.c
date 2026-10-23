@@ -595,6 +595,7 @@ static void remove_lock_assets(void)
 {
     unlink(TILE_ASSET_FILE);
     unlink(TILE_PIC0_FILE);
+    unlink(TILE_PIC1_FILE);
     rmdir(TILE_ASSET_DIR);
 }
 

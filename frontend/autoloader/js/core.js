@@ -136,11 +136,12 @@ W.formatElapsed = function (ms) {
 W.resetTiming = function () {
   W.state.timing = { t0: Date.now(), marks: {}, order: [] };
 };
-W.markTiming = function (name) {
+W.markTiming = function (name, atMs) {
   if (!name) return;
   if (!W.state.timing) W.resetTiming();
   if (W.state.timing.marks[name] != null) return;
-  var ms = Date.now() - W.state.timing.t0;
+  /* atMs: exact time the stage line was written inside the exploit iframe. */
+  var ms = (typeof atMs === 'number' && atMs > 0 ? atMs : Date.now()) - W.state.timing.t0;
   W.state.timing.marks[name] = ms;
   W.state.timing.order.push(name);
   try { W.uiLog('[time] ' + name + ' +' + ms + 'ms', 'info'); } catch (e) {}

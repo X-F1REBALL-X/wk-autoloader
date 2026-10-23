@@ -13,6 +13,8 @@ function writeLog(message, type = "log", replace = false) {
   if (type === "error") marker = "-";
   if (type === "info" || type === "success") marker = "+";
   line.textContent = `[${marker}] ${message}`;
+  /* Wall-clock stamp so the host page can time each stage exactly. */
+  line.dataset.t = String(Date.now());
   output.scrollTop = output.scrollHeight;
 }
 

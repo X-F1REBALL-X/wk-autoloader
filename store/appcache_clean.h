@@ -41,4 +41,11 @@ int appcache_manifest_needs_refresh(const char *userid, const char *ver,
 int appcache_manifest_write_version(const char *userid, const char *ver,
                                     appcache_log_fn log);
 
+/* Clean ELF: backup into a new folder (never overwrites), drop only the
+ * Store origin rows, and forget the saved manifest version. */
+int appcache_backup_user_to(const char *userid, const char *dest,
+                            appcache_log_fn log);
+int appcache_clear_store_origin_user(const char *userid, appcache_log_fn log);
+int appcache_manifest_clear_version(const char *userid, appcache_log_fn log);
+
 #endif

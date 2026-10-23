@@ -208,3 +208,16 @@ $(RESTORE_ELF): $(STORE_DIR)/restore_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/fi
 		$(STORE_DIR)/appcache_clean.c \
 		$(STORE_GEN)/sqlite3.o $(LIBS)
 	$(STRIP) $@
+
+# Clean-console test: back up, drop Store AppCache origin, clear manifest_ver.
+CLEAN_ELF := WK_Autoloader_Store_Clean_V$(STORE_VERSION).elf
+.PHONY: clean-elf
+clean-elf: $(CLEAN_ELF)
+
+$(CLEAN_ELF): $(STORE_DIR)/clean_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
+              $(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3.o
+	@echo "Building $(CLEAN_ELF)..."
+	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ \
+		$(STORE_DIR)/clean_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
+		$(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3.o $(LIBS)
+	$(STRIP) $@

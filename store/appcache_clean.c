@@ -650,3 +650,54 @@ int appcache_manifest_write_version(const char *userid, const char *ver,
         log("[WKALI] AppCache: wrote manifest_ver %s for %s\n", ver, userid);
     return 0;
 }
+
+/* ---- Clean-console helpers (used by the Clean ELF only) ---- */
+
+int appcache_backup_user_to(const char *userid, const char *dest,
+                            appcache_log_fn log)
+{
+    char shell[PATH_MAX];
+    struct stat st;
+
+    if (!userid || !dest)
+        return -1;
+    shell_path(shell, sizeof(shell), userid);
+    if (stat(shell, &st) || !S_ISDIR(st.st_mode))
+        return -1;
+    /* dest must be new: refuse to overwrite an existing folder. */
+    if (stat(dest, &st) == 0) {
+        if (log)
+            log("[WKCLEAN] backup dest %s exists, refusing\n", dest);
+        return -1;
+    }
+    return backup_one_shell(shell, dest, log);
+}
+
+int appcache_clear_store_origin_user(const char *userid, appcache_log_fn log)
+{
+    char shell[PATH_MAX];
+    char db[PATH_MAX];
+
+    if (!userid)
+        return -1;
+    shell_path(shell, sizeof(shell), userid);
+    if (!find_db(shell, 0, db, sizeof(db))) {
+        if (log)
+            log("[WKCLEAN] no ApplicationCache.db for %s\n", userid);
+        return 0;
+    }
+    /* Origin rows only. No file-level fallback. */
+    return wipe_store_origin_db(db, log);
+}
+
+int appcache_manifest_clear_version(const char *userid, appcache_log_fn log)
+{
+    char path[PATH_MAX];
+    ver_path(path, sizeof(path), userid);
+    if (unlink(path) == 0) {
+        if (log)
+            log("[WKCLEAN] removed %s\n", path);
+        return 1;
+    }
+    return 0;
+}

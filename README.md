@@ -1,46 +1,47 @@
-# IgniKey
+# WK Autoloader Store
 
-PS5 Store jailbreak host (NPXS40047). Private repo by X-F1REBALL-X.
+Turns the PS5 Store tile into **WK Autoloader**. Open the Store icon, start the jailbreak (Relapse), and **Elf Launcher** opens when it finishes.
 
-Current version: **1.0.0** (branch `midnight-v34`).
+**Release:** [v1.1.3](https://github.com/X-F1REBALL-X/wk-autoloader/releases/tag/v1.1.3) (first public Store build)
 
-## What it is
+## Requirements
 
-IgniKey remaps the PS5 Store tile so it opens a local WebKit UI on the console.
-After sending the ELF to elfldr (`:9021`), the tile opens:
+- PS5 firmware **7.00–13.60** (Relapse)
+- **elfldr** listening on port **9021**
+- A way to send an ELF to elfldr (e.g. after a prior jailbreak)
 
-`http://127.0.0.1:1022/app/index.html`
+## Install
 
-Same `/app/` path as v13, with AppCache, so the page persists across reboots.
+1. Send [`WK_Autoloader_Store_V1.1.3.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.3/WK_Autoloader_Store_V1.1.3.elf) to elfldr on port 9021.
+2. Wait until install finishes, then reboot the console.
+3. Open the **Store** tile on the home screen.
+4. Press **Start Jailbreak**. After Relapse completes, Elf Launcher opens automatically.
 
-## Highlights
+## Restore the PlayStation Store tile
 
-- UI: Midnight (the only theme)
-- Visible version: `1.0.0`
-- Auto Start: off by default
-- Cancel: only during the Auto Start countdown (not mid-jailbreak)
-- While running: percentage + timer on the round button
-- Supported FW: 7.00-13.60 (Relapse only).
+Send [`WK_Autoloader_Store_Restore_V1.1.3.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.3/WK_Autoloader_Store_Restore_V1.1.3.elf) to elfldr on port 9021, then reboot.
 
-## Restore
+## Build from source
 
-To return the Store tile to stock, download `WK_Autoloader_Store_Restore_V1.1.3.elf` from the release,
-send it to elfldr like the IgniKey ELF, then reboot.
+Needs the [PS5 payload SDK](https://github.com/ps5-payload-dev/sdk) with libmicrohttpd.
 
-## Build
-
-Requires the PS5 payload SDK with libmicrohttpd.
-
-```
-make store
+```bash
+make store SDK=/path/to/ps5-payload-sdk BUILD_TYPE=stable
+make restore SDK=/path/to/ps5-payload-sdk
 ```
 
-Output: `IgniKey-1.0.0.elf`. Store remap sources live in `store/`;
-the UI and autoloader live in `frontend/autoloader/`.
+Outputs:
+
+- `WK_Autoloader_Store_V1.1.3.elf`
+- `WK_Autoloader_Store_Restore_V1.1.3.elf`
 
 ## Credits
 
-- X-F1REBALL-X
-- Relapse chain
-- elfldr
-- Store tile remap inspired by notmaj0r
+- Relapse (PS5 WebKit / kernel chain, vendored under `frontend/autoloader/relapse/`)
+- [ps5-elfldr](https://github.com/itsPLK/ps5-elfldr) (itsPLK)
+- [elf-launcher](https://github.com/X-F1REBALL-X/elf-launcher)
+- SQLite (Store tile database remap)
+
+## License
+
+[GNU GPL v3](LICENSE)

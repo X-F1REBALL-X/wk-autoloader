@@ -214,10 +214,17 @@ CLEAN_ELF := WK_Autoloader_Store_Clean_V$(STORE_VERSION).elf
 .PHONY: clean-elf
 clean-elf: $(CLEAN_ELF)
 
+# WebKit keeps ApplicationCache.db in WAL mode, so this ELF needs a
+# SQLite build with WAL support (the shared one omits it).
+$(STORE_GEN)/sqlite3_wal.o: $(SQLITE_SRC)
+	@mkdir -p $(STORE_GEN)
+	$(CC) -Os -ffunction-sections -fdata-sections -I$(TARGET)/include \
+		-DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DEFAULT_MEMSTATUS=0 -w -c -o $@ $<
+
 $(CLEAN_ELF): $(STORE_DIR)/clean_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
-              $(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3.o
+              $(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3_wal.o
 	@echo "Building $(CLEAN_ELF)..."
 	$(CC) $(STORE_CFLAGS) $(LDFLAGS) -o $@ \
 		$(STORE_DIR)/clean_main.c $(STORE_DIR)/toast.c $(STORE_DIR)/files.c \
-		$(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3.o $(LIBS)
+		$(STORE_DIR)/appcache_clean.c $(STORE_GEN)/sqlite3_wal.o $(LIBS)
 	$(STRIP) $@

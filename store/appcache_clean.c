@@ -249,8 +249,8 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
     if (sqlite3_prepare_v2(db,
             "SELECT id FROM CacheGroups LIMIT 1", -1, &st, NULL) != SQLITE_OK) {
         if (log)
-            log("[WKALI] AppCache: no CacheGroups in %s, will wipe files\n",
-                db_path);
+            log("[WKALI] AppCache: cannot read CacheGroups in %s: %s\n",
+                db_path, sqlite3_errmsg(db));
         sqlite3_close(db);
         return -1;
     }

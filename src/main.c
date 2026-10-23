@@ -188,8 +188,10 @@ int main(void) {
         char ac_user[16];
         if (sceUserServiceGetForegroundUser(&ac_uid) == 0 && ac_uid > 0) {
             snprintf(ac_user, sizeof(ac_user), "%08x", (unsigned)ac_uid);
+            /* Never wipe on install. A changed manifest makes WebKit update
+             * the cached group in place, so a filled cache stays usable. */
             if (appcache_manifest_needs_refresh(ac_user, STORE_VERSION, wkali_log))
-                appcache_clean_store_user(ac_user, wkali_log);
+                wkali_log("[WKALI] AppCache: manifest changed, WebKit will update in place (no wipe)\n");
         } else {
             wkali_log("[WKALI] AppCache: no foreground user, skip cache clear\n");
         }

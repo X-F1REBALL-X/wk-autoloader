@@ -544,12 +544,13 @@ int appcache_clean_store_user(const char *userid, appcache_log_fn log)
         }
     }
 
-    /* Fallback: wipe only this user's AppCache files (whole db). */
+    /* Never wipe the whole ApplicationCache.db: other origins (HearBridge
+     * etc.) live there too. Leave the cache as is. */
+    (void)n;
     if (log)
-        log("[WKALI] AppCache: falling back to full wipe for user %s\n",
+        log("[WKALI] AppCache: origin delete not possible for %s, cache kept\n",
             userid);
-    n = wipe_files_under(shell, 0, log);
-    return n;
+    return 0;
 }
 
 int appcache_clean_store_all_users(appcache_log_fn log)

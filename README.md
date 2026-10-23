@@ -16,6 +16,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
 - [What's new in 1.2.0](#whats-new-in-120)
+- [Known issues](#known-issues)
 - [Building from source](#building-from-source)
 - [License](#license)
 - [Credits](#credits)
@@ -64,6 +65,12 @@ Changes since 1.1.3.
 - Per-stage timing in ms, shown in the log and in Recent.
 
 All versions are on the [releases page](https://github.com/X-F1REBALL-X/wk-autoloader/releases).
+
+## Known issues
+
+The first jailbreak right after installing the Store (or after a clean install or cache wipe) can occasionally freeze the console or cause a kernel panic. On that first run WebKit is still writing the Store's offline AppCache to disk while the exploit runs, and the extra disk and memory activity during its timing-sensitive phase can make it fail. Once the cache is fully written, later jailbreaks load from cache and are stable.
+
+If it freezes, hold the power button to restart the console and run the jailbreak again; it usually works from the second run. To lower the risk, wait until the Store install has fully finished before your first jailbreak; the freeze is most likely while the AppCache is still being written right after install or after a cache wipe.
 
 ## Building from source
 

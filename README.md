@@ -2,7 +2,7 @@
 
 Turns the PS5 Store tile into **WK Autoloader**. Open the Store icon, start the jailbreak (Relapse), and **Elf Launcher** opens when it finishes.
 
-**Release:** [v1.1.3](https://github.com/X-F1REBALL-X/wk-autoloader/releases/tag/v1.1.3) (first public Store build)
+**Release:** [v1.1.4](https://github.com/X-F1REBALL-X/wk-autoloader/releases/tag/v1.1.4)
 
 ## Requirements
 
@@ -12,14 +12,16 @@ Turns the PS5 Store tile into **WK Autoloader**. Open the Store icon, start the 
 
 ## Install
 
-1. Send [`WK_Autoloader_Store_V1.1.3.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.3/WK_Autoloader_Store_V1.1.3.elf) to elfldr on port 9021.
+1. Send [`WK_Autoloader_Store_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_V1.1.4.elf) to elfldr on port 9021.
 2. Wait until install finishes, then reboot the console.
 3. Open the **Store** tile on the home screen.
 4. Press **Start Jailbreak**. After Relapse completes, Elf Launcher opens automatically.
 
+The tile works offline after install; you only send the ELF again to reinstall or update. Each install clears the old WebKit cache first, so the cache is always filled from scratch.
+
 ## Restore the PlayStation Store tile
 
-Send [`WK_Autoloader_Store_Restore_V1.1.3.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.3/WK_Autoloader_Store_Restore_V1.1.3.elf) to elfldr on port 9021, then reboot.
+Send [`WK_Autoloader_Store_Restore_V1.1.4.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.1.4/WK_Autoloader_Store_Restore_V1.1.4.elf) to elfldr on port 9021, then reboot. This also clears the WK cache.
 
 ## Build from source
 
@@ -32,8 +34,8 @@ make restore SDK=/path/to/ps5-payload-sdk
 
 Outputs:
 
-- `WK_Autoloader_Store_V1.1.3.elf`
-- `WK_Autoloader_Store_Restore_V1.1.3.elf`
+- `WK_Autoloader_Store_V1.1.4.elf`
+- `WK_Autoloader_Store_Restore_V1.1.4.elf`
 
 ## Credits
 

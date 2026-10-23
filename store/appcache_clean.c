@@ -257,8 +257,15 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
     sqlite3_finalize(st);
     st = NULL;
 
-    /* Wait for the browser's lock instead of failing at once. */
+    /* Wait for any lock, then take the db exclusively and leave WAL mode so
+     * the delete is written straight into ApplicationCache.db (shared -shm
+     * locking is not reliable from an ELF on PS5). */
     sqlite3_busy_timeout(db, 5000);
+    exec_sql(db, "PRAGMA locking_mode=EXCLUSIVE");
+    exec_sql(db, "PRAGMA wal_checkpoint(TRUNCATE)");
+    if (exec_sql(db, "PRAGMA journal_mode=DELETE") != 0 && log)
+        log("[WKALI] AppCache: journal_mode=DELETE failed (%s)\n",
+            sqlite3_errmsg(db));
     if (exec_sql(db, "BEGIN IMMEDIATE") != 0) {
         if (log)
             log("[WKALI] AppCache: db busy (%s), close the browser and retry\n",
@@ -347,9 +354,38 @@ static int wipe_store_origin_db(const char *db_path, appcache_log_fn log)
         sqlite3_close(db);
         return -1;
     }
-    /* Fold the WAL back into the main file so the change is on disk. */
-    exec_sql(db, "PRAGMA wal_checkpoint(TRUNCATE)");
+    /* Put WebKit's WAL mode back, then close. */
+    exec_sql(db, "PRAGMA journal_mode=WAL");
     sqlite3_close(db);
+
+    /* Re-open and make sure the Store group is really gone. */
+    {
+        sqlite3 *vdb = NULL;
+        sqlite3_stmt *vst = NULL;
+        int left = -1;
+        if (sqlite3_open_v2(db_path, &vdb, SQLITE_OPEN_READONLY, NULL) == SQLITE_OK &&
+            sqlite3_prepare_v2(vdb,
+                "SELECT COUNT(*) FROM CacheGroups WHERE origin = ?1 OR origin = ?2 "
+                "OR manifestURL LIKE ?3", -1, &vst, NULL) == SQLITE_OK) {
+            sqlite3_bind_text(vst, 1, APPCACHE_STORE_ORIGIN_KEY, -1, SQLITE_STATIC);
+            sqlite3_bind_text(vst, 2, APPCACHE_STORE_ORIGIN, -1, SQLITE_STATIC);
+            sqlite3_bind_text(vst, 3, like, -1, SQLITE_STATIC);
+            if (sqlite3_step(vst) == SQLITE_ROW)
+                left = sqlite3_column_int(vst, 0);
+        }
+        if (vst)
+            sqlite3_finalize(vst);
+        if (vdb)
+            sqlite3_close(vdb);
+        if (left != 0) {
+            if (log)
+                log("[WKALI] AppCache: FAILED, Store group still present after delete (left=%d)\n",
+                    left);
+            return -1;
+        }
+        if (log)
+            log("[WKALI] AppCache: verified, Store group gone\n");
+    }
     if (log)
         log("[WKALI] AppCache: selective wipe %s (groups=%d caches=%d)\n",
             db_path, groups, caches);

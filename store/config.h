@@ -2,7 +2,9 @@
 
 /* Store tile remapper for fresh install: open local WK Autoloader. */
 
+#ifndef TILE_ID
 #define TILE_ID     "NPXS40047"
+#endif
 
 #ifndef TILE_LABEL
 #define TILE_LABEL  "WK Autoloader"

@@ -148,7 +148,7 @@ clean:
 	rm -rf $(FRONTEND_STAGE)
 	rm -f $(ELF) $(FILE_REGISTRY_H) $(FILE_REGISTRY_C) $(FILE_REGISTRY_STAMP)
 	rm -f $(WKAL_HOST) $(VERSION_HEADER)
-	rm -rf $(STORE_GEN) $(STORE_ELF) WK_Autoloader_Store_Restore_V1.2.0.elf
+	rm -rf $(STORE_GEN) $(STORE_ELF) $(YT_ELF) WK_Autoloader_Store_Restore_V1.2.0.elf
 
 .PHONY: all host dev clean payload-deps companions
 
@@ -171,6 +171,31 @@ STORE_CFLAGS := $(CFLAGS) -DIGNIKEY_STORE -DSTORE_VERSION='"$(STORE_VERSION)"' -
 
 .PHONY: store
 store: $(STORE_ELF)
+
+# ---------------------------------------------------------------------------
+# Store tile -> YouTube (Y2JB) launcher.
+#
+# Keeps the Store tile's stock name/art and only rewrites its launch URI to
+# YouTube's own deeplink (psgm:play?id=PPSA0165x). The Y2JB payload lives in
+# the installed YouTube app; this payload does not install or alter it.
+# Send to elfldr :9021, reboot, then press Store.
+YT_ELF  := WK_Store_YouTube_V1.0.0.elf
+YT_SRCS := $(STORE_DIR)/yt_main.c $(STORE_DIR)/yt_remap.c \
+           $(STORE_DIR)/files.c $(STORE_DIR)/toast.c
+YT_CFLAGS := $(CFLAGS) -DIGNIKEY_STORE -I$(STORE_DIR) -I$(STORE_GEN) \
+             -I$(STORE_DIR)/third_party
+# No HTTP server / app-install code in this payload, so no libmicrohttpd.
+YT_LIBS := -L$(TARGET)/lib -lpthread -lSceSystemService -lkernel_sys
+
+.PHONY: store-yt youtube
+store-yt youtube: $(YT_ELF)
+
+$(YT_ELF): $(YT_SRCS) $(STORE_DIR)/yt_remap.h $(STORE_DIR)/config.h \
+           $(STORE_GEN)/sqlite3.o
+	@echo "Building $(YT_ELF) (Store tile -> installed YouTube / Y2JB)..."
+	$(CC) $(YT_CFLAGS) $(LDFLAGS) -o $@ $(YT_SRCS) \
+		$(STORE_GEN)/sqlite3.o $(YT_LIBS)
+	$(STRIP) $@
 
 $(STORE_GEN)/icon_png.h: $(STORE_DIR)/icon0.png $(STORE_DIR)/tools/embed_png.py
 	@mkdir -p $(STORE_GEN)

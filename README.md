@@ -45,6 +45,36 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 Send [`WK_Autoloader_Store_Restore_V1.2.0.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.2.0/WK_Autoloader_Store_Restore_V1.2.0.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
 
+## Optional: Store tile as a YouTube (Y2JB) launcher
+
+This tree also contains a separate payload that does **not** use WebKit:
+
+`WK_Store_YouTube_V1.0.0.elf` keeps the Store tile's stock name and art and
+only rewrites its launch URI to the installed YouTube app's own deeplink
+(`psgm:play?id=PPSA0165x`). Pressing **Store** then starts YouTube, where an
+already-installed [Y2JB](https://github.com/itsPLK/ps5-y2jb-autoloader)
+payload runs and loads elfldr.
+
+Requirements:
+
+- Y2JB already installed and working in the YouTube app.
+- YouTube must be one of `PPSA01650` / `PPSA01651` / `PPSA01652`.
+- elfldr on `9021` to send this one-time installer.
+
+Install:
+
+1. Send `WK_Store_YouTube_V1.0.0.elf` to elfldr on port `9021`.
+2. Wait for **"Store tile now launches YouTube. Reboot."**
+3. Reboot, then press the **Store** tile.
+
+The payload backs up `app.db` / `appinfo.db` to
+`/data/autojb-store-only-backup/` before writing, so
+`WK_Autoloader_Store_Restore_V1.2.0.elf` restores the normal Store tile.
+It does not install, update or modify Y2JB itself.
+
+If the Store tile does not launch YouTube on your firmware, use the YouTube
+tile directly; the tile deeplink is the only thing this payload changes.
+
 ## What's new in 1.2.0
 
 Changes since 1.1.4.
@@ -72,9 +102,12 @@ Needs the [PS5 payload SDK](https://github.com/ps5-payload-dev/sdk) with libmicr
 ```bash
 make store SDK=/path/to/ps5-payload-sdk BUILD_TYPE=stable
 make restore SDK=/path/to/ps5-payload-sdk
+make store-yt SDK=/path/to/ps5-payload-sdk
 ```
 
-Outputs `WK_Autoloader_Store_V1.2.0.elf` and `WK_Autoloader_Store_Restore_V1.2.0.elf`.
+Outputs `WK_Autoloader_Store_V1.2.0.elf`, `WK_Autoloader_Store_Restore_V1.2.0.elf`
+and `WK_Store_YouTube_V1.0.0.elf`. The `store-yt` target does not need
+libmicrohttpd because it has no HTTP server or AppCache.
 
 ## License
 

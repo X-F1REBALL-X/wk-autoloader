@@ -37,6 +37,8 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Installation
 
+If an older WK Autoloader Store is already installed, send the Restore ELF first, reboot, then install 1.2.1. That clears leftovers so the new AppCache can fill cleanly.
+
 1. Send [`WK_Autoloader_Store_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_V1.2.1.elf) to elfldr on port `9021`.
 2. Wait until the install finishes, then reboot the console.
 3. Open the **Store** tile on the home screen.
@@ -55,6 +57,7 @@ Changes since 1.2.0.
 - If the console is already jailbroken, the UI shows that state instead of running the chain again.
 - First Store open after install shows a clear offline-cache fill percent; later opens use the stable AppCache and start instantly from memory.
 - Store Restore puts the PlayStation Store tile back and also removes leftover WK Autoloader app folders and cache data (no backups kept).
+- Before upgrading from an older WK Autoloader Store install, run Restore first, reboot, then install 1.2.1.
 
 ## What's new in 1.2.0
 

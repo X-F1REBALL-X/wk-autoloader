@@ -274,6 +274,17 @@ W.launcher.ensureRunning = function (cb) {
 };
 
 
+W.launcher.probeElfldr = function (cb) {
+  var done = false;
+  function fin(up) { if (done) return; done = true; try { cb(!!up); } catch (e) {} }
+  try {
+    fetch('http://127.0.0.1:9021/?t=' + Date.now(), { method: 'GET', mode: 'no-cors', cache: 'no-store' })
+      .then(function () { fin(true); })
+      .catch(function () { fin(false); });
+  } catch (e) { fin(false); return; }
+  setTimeout(function () { fin(false); }, 250);
+};
+
 W.launcher.probeQuick = function (cb) {
   var done = false;
   function fin(up) { if (done) return; done = true; try { cb(!!up); } catch (e) {} }

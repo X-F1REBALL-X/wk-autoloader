@@ -434,7 +434,20 @@ W.ui.bindHome = function () {
     if (W.start) W.start();
   }
 
+  function markAlreadyJailbroken() {
+    W.state.alreadyJailbroken = true;
+    cancelCountdown();
+    if (go) {
+      go.disabled = true;
+      go.classList.remove('is-cancel');
+      go.textContent = W.t('alreadyJailbroken');
+    }
+    if (openOnly) openOnly.hidden = false;
+    try { W.uiLog(W.t('alreadyJailbroken'), 'success'); } catch (eAj) {}
+  }
+
   function startCountdown() {
+    if (W.state.alreadyJailbroken) { markAlreadyJailbroken(); return; }
     if (W.state.chainStarted || autoTimer || !go) return;
     var fw = W.detectFirmware();
     if (fw && fw.num >= 6.0 && fw.num < 7.0) return;
@@ -530,15 +543,28 @@ W.ui.bindHome = function () {
   W.ui.syncChainUi();
   W.ui.renderHistory();
 
-  /* Quick non-blocking probe: if Elf already up, show Open button. */
-  if (W.launcher && W.launcher.probeQuick) {
-    W.launcher.probeQuick(function (up) {
-      if (openOnly) openOnly.hidden = !up;
-      if (up) W.ui.refreshCfiFromLauncher();
-    });
+  /* Quick non-blocking probe: if Elf already up, show Open button.
+     If elfldr (:9021) or Elf Launcher (:1000) answers, console is already
+     jailbroken — do not auto-run the exploit. */
+  function afterProbe(elfUp, ldrUp) {
+    if (openOnly) openOnly.hidden = !elfUp;
+    if (elfUp) try { W.ui.refreshCfiFromLauncher(); } catch (eC) {}
+    if (elfUp || ldrUp) { markAlreadyJailbroken(); return; }
+    if (auto && auto.checked) startCountdown();
   }
-
-  if (auto && auto.checked) startCountdown();
+  if (W.launcher && (W.launcher.probeQuick || W.launcher.probeElfldr)) {
+    var got = 0, elfUp = false, ldrUp = false;
+    function one() {
+      got += 1;
+      if (got >= 2) afterProbe(elfUp, ldrUp);
+    }
+    if (W.launcher.probeQuick) W.launcher.probeQuick(function (up) { elfUp = !!up; one(); });
+    else one();
+    if (W.launcher.probeElfldr) W.launcher.probeElfldr(function (up) { ldrUp = !!up; one(); });
+    else one();
+  } else if (auto && auto.checked) {
+    startCountdown();
+  }
 
   W.ui._cancelCountdown = cancelCountdown;
   W.ui._startCountdown = startCountdown;

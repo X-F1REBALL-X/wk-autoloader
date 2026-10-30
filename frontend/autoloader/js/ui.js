@@ -453,7 +453,30 @@ W.ui.bindHome = function () {
     if (fw && fw.num >= 6.0 && fw.num < 7.0) return;
     remaining = delaySec();
     W.state.runStage = 'countdown';
-    if (remaining <= 0) { beginJailbreak(); return; }
+    if (remaining <= 0) {
+      /* Delay 0: wait until AppCache is idle so bundled assets are ready. */
+      (function waitCacheThenStart() {
+        var ac = (typeof applicationCache !== 'undefined') ? applicationCache : null;
+        var done = false;
+        function go() {
+          if (done) return;
+          done = true;
+          beginJailbreak();
+        }
+        if (!ac) { go(); return; }
+        var st = -1;
+        try { st = ac.status; } catch (e0) { go(); return; }
+        if (st === 0 || st === 1 || st === 5) { go(); return; }
+        try {
+          ac.addEventListener('noupdate', go, false);
+          ac.addEventListener('cached', go, false);
+          ac.addEventListener('updateready', go, false);
+          ac.addEventListener('error', go, false);
+        } catch (e1) {}
+        setTimeout(go, 400);
+      })();
+      return;
+    }
     go.disabled = false;
     go.classList.add('is-cancel');
     go.textContent = W.t('cancel') + ' · ' + remaining;

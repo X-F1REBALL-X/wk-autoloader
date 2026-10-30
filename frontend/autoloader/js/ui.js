@@ -377,7 +377,7 @@ W.ui.bindHome = function () {
   function delaySec() {
     var n = parseFloat(delayCur);
     if (isNaN(n)) n = 3;
-    return Math.round(Math.min(3, Math.max(1, n)));
+    return Math.round(Math.min(3, Math.max(0, n)));
   }
   function retryN() {
     var n = retry ? parseInt(retry.value, 10) : 1;
@@ -389,7 +389,7 @@ W.ui.bindHome = function () {
     if (delay) {
       var db = delay.querySelectorAll('.opt[data-delay]'), k;
       for (k = 0; k < db.length; k++) {
-        if (parseInt(db[k].getAttribute('data-delay'), 10) === delaySec()) db[k].classList.add('on');
+        if (Number(db[k].getAttribute('data-delay')) === delaySec()) db[k].classList.add('on');
         else db[k].classList.remove('on');
       }
     }
@@ -408,7 +408,7 @@ W.ui.bindHome = function () {
     try { W.ui.renderHomeInfo(); } catch (eh) {}
   }
   paintAuto();
-  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delayCur = Math.round(Math.min(3, Math.max(1, dv))); }
+  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delayCur = Math.round(Math.min(3, Math.max(0, dv))); }
   if (retry) { var rv = parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10); if (isNaN(rv)) rv = 1; retry.value = String(Math.min(3, Math.max(0, rv))); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
@@ -485,7 +485,8 @@ W.ui.bindHome = function () {
       var b = ev.target;
       while (b && b !== delay && !(b.getAttribute && b.getAttribute('data-delay'))) b = b.parentNode;
       if (!b || b === delay) return;
-      delayCur = parseInt(b.getAttribute('data-delay'), 10);
+      delayCur = Number(b.getAttribute('data-delay'));
+      if (isNaN(delayCur)) delayCur = 3;
       onDelayMove();
     });
   }

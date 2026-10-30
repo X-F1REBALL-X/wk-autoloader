@@ -4,7 +4,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Quick start
 
-1. Send [`WK_Autoloader_Store_V1.2.0.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.2.0/WK_Autoloader_Store_V1.2.0.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_V1.2.1.elf) to elfldr on port `9021`.
 2. Wait for the install to finish, then reboot.
 3. Open the **Store** tile and press **Start Jailbreak**.
 
@@ -14,6 +14,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Restore the PlayStation Store tile](#restore-the-playstation-store-tile)
+- [What's new in 1.2.1](#whats-new-in-121)
 - [What's new in 1.2.0](#whats-new-in-120)
 - [Known issues](#known-issues)
 - [Building from source](#building-from-source)
@@ -36,14 +37,21 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Installation
 
-1. Send [`WK_Autoloader_Store_V1.2.0.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.2.0/WK_Autoloader_Store_V1.2.0.elf) to elfldr on port `9021`.
+1. Send [`WK_Autoloader_Store_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_V1.2.1.elf) to elfldr on port `9021`.
 2. Wait until the install finishes, then reboot the console.
 3. Open the **Store** tile on the home screen.
 4. Press **Start Jailbreak**. After Relapse completes, Elf Launcher opens automatically.
 
 ## Restore the PlayStation Store tile
 
-Send [`WK_Autoloader_Store_Restore_V1.2.0.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/download/v1.2.0/WK_Autoloader_Store_Restore_V1.2.0.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
+Send [`WK_Autoloader_Store_Restore_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_Restore_V1.2.1.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
+
+## What's new in 1.2.1
+
+Changes since 1.2.0.
+
+- Auto-start delay can be set to 0s (start immediately, no countdown).
+- Choosing 0s is saved as 0 and is not rewritten to the default.
 
 ## What's new in 1.2.0
 
@@ -74,7 +82,7 @@ make store SDK=/path/to/ps5-payload-sdk BUILD_TYPE=stable
 make restore SDK=/path/to/ps5-payload-sdk
 ```
 
-Outputs `WK_Autoloader_Store_V1.2.0.elf` and `WK_Autoloader_Store_Restore_V1.2.0.elf`.
+Outputs `WK_Autoloader_Store_V1.2.1.elf` and `WK_Autoloader_Store_Restore_V1.2.1.elf`.
 
 ## License
 

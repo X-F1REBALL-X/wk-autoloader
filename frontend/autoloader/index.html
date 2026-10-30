@@ -10,6 +10,15 @@
   <title>WK Autoloader</title>
 </head>
 <body>
+  <div id="cacheFill" hidden>
+  <div class="cf-card">
+    <p class="cf-title">Preparing cache</p>
+    <p class="cf-pct" id="cacheFillPct">0%</p>
+    <div class="cf-track"><div class="cf-bar" id="cacheFillBar"></div></div>
+    <p class="cf-sub" id="cacheFillSub">First open only — keep this page open</p>
+  </div>
+</div>
+
   <div id="toast" role="status" aria-live="polite"><s>!</s><span><b id="toastTitle"></b><small id="toastBody"></small></span><button type="button" id="toastx" aria-label="Dismiss">×</button></div>
   <div id="selfupd" role="status"><p id="selfupdtxt"></p><div class="acts"><button type="button" id="selfupddl" data-i18n="update">Update</button><button type="button" id="selfupdx" data-i18n="selfUpdateLater">Later</button></div></div>
 

@@ -9,14 +9,16 @@
  * backup exists and still looks like an untouched Store. Otherwise built-in
  * stock values are used, so the restore works on any console.
  *
- * Only the Store tile rows are touched. Other apps, games and users keep
- * their data. The current DBs are copied to RESTORE_PRE_DIR first.
+ * Restores the Store tile, clears WK AppCache, and deletes WK leftovers
+ * (home icons, /data/wkal, appmeta lock art). No WK backups are kept.
+ * The current DBs are copied to RESTORE_PRE_DIR during the run, then removed.
  */
 #include <errno.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -611,6 +613,103 @@ static void restore_log(const char *fmt, ...)
     fflush(stdout);
 }
 
+/* Remove WK Autoloader leftovers; no backups kept. */
+static int wipe_tree(const char *path)
+{
+    char sub[512];
+    struct stat st;
+    struct dirent *e;
+    DIR *d;
+    int n = 0;
+
+    if (lstat(path, &st) != 0)
+        return 0;
+    if (S_ISDIR(st.st_mode)) {
+        d = opendir(path);
+        if (!d)
+            return 0;
+        while ((e = readdir(d))) {
+            if (!strcmp(e->d_name, ".") || !strcmp(e->d_name, ".."))
+                continue;
+            snprintf(sub, sizeof(sub), "%s/%s", path, e->d_name);
+            n += wipe_tree(sub);
+        }
+        closedir(d);
+        if (!rmdir(path))
+            n++;
+    } else if (!unlink(path)) {
+        n++;
+    }
+    return n;
+}
+
+static void wipe_one(const char *path, int *total)
+{
+    struct stat st;
+    int n;
+
+    if (stat(path, &st) != 0)
+        return;
+    n = wipe_tree(path);
+    *total += n;
+    restore_log("[WKRESTORE] wiped %s (%d)\n", path, n);
+}
+
+static void wipe_appcache_files_under_home(int *total)
+{
+    DIR *home;
+    struct dirent *e;
+    char path[512];
+    static const char *const names[] = {
+        "webkit/shell/appcache/ApplicationCache.db",
+        "webkit/shell/appcache/ApplicationCache.db-wal",
+        "webkit/shell/appcache/ApplicationCache.db-shm",
+        "webkit/shell/appcache/ApplicationCache.db-journal",
+        "webkit/shell/appcache/ApplicationCache",
+        "webkit/shell/appcache/OfflineWebApplicationCache",
+        "webkit/shell/ApplicationCache.db",
+        "webkit/shell/ApplicationCache.db-wal",
+        "webkit/shell/ApplicationCache.db-shm",
+        "webkit/shell/ApplicationCache",
+        "webkit/shell/OfflineWebApplicationCache",
+        NULL
+    };
+    int i;
+
+    home = opendir("/user/home");
+    if (!home)
+        return;
+    while ((e = readdir(home))) {
+        if (e->d_name[0] == '.')
+            continue;
+        for (i = 0; names[i]; i++) {
+            snprintf(path, sizeof(path), "/user/home/%s/%s", e->d_name, names[i]);
+            wipe_one(path, total);
+        }
+    }
+    closedir(home);
+}
+
+static void wipe_wk_leftovers(void)
+{
+    int total = 0;
+
+    wipe_one("/user/app/SLKT00001", &total);
+    wipe_one("/user/app/ELFL00001", &total);
+    wipe_one("/user/app/PLDM00001", &total);
+    wipe_one(TILE_ASSET_FILE, &total);
+    wipe_one(TILE_PIC0_FILE, &total);
+    wipe_one(TILE_PIC1_FILE, &total);
+    wipe_one(TILE_ASSET_DIR, &total);
+    wipe_appcache_files_under_home(&total);
+    wipe_one("/data/wkal", &total);
+    wipe_one(BACKUP_DIR, &total);
+    wipe_one(RESTORE_PRE_DIR, &total);
+    toast("Removed WK leftovers (%d).", total);
+    restore_log("[WKRESTORE] leftover wipe total=%d\n", total);
+}
+
+
 int main(void)
 {
     char concept[128];
@@ -661,14 +760,11 @@ int main(void)
         toast("Warning: %d lock refs remain.", lock_refs);
     }
 
-    /* Uninstall: back up each profile, then clear only the Store AppCache
-     * origin (http://127.0.0.1:1022). Backups: /data/wkal/appcache_backup/. */
+    /* Clear Store AppCache origin, then delete all WK leftovers (no backups). */
     signal(SIGPIPE, SIG_IGN);
     int ac = appcache_clean_store_all_users(restore_log);
-    if (ac > 0)
-        toast("Cleared Store AppCache (%d). Backup in /data/wkal/appcache_backup.", ac);
-    else
-        toast("Store AppCache clear done (backups in /data/wkal/appcache_backup).");
+    restore_log("[WKRESTORE] appcache_clean_store_all_users -> %d\n", ac);
+    wipe_wk_leftovers();
 
     toast("Store restored (%d rows). Reboot now.", app_rows + info_rows);
     return 0;

@@ -44,7 +44,7 @@ Turns the PS5 Store tile into WK Autoloader: open the tile, start the jailbreak,
 
 ## Restore the PlayStation Store tile
 
-Send [`WK_Autoloader_Store_Restore_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_Restore_V1.2.1.elf) to elfldr on port `9021`, then reboot. This also clears the WK cache.
+Send [`WK_Autoloader_Store_Restore_V1.2.1.elf`](https://github.com/X-F1REBALL-X/wk-autoloader/releases/latest/download/WK_Autoloader_Store_Restore_V1.2.1.elf) to elfldr on port `9021`, then reboot. This restores the Store tile and removes leftover WK Autoloader folders and cache data.
 
 ## What's new in 1.2.1
 
@@ -52,6 +52,9 @@ Changes since 1.2.0.
 
 - Auto-start delay can be set to 0s (start immediately, no countdown).
 - Choosing 0s is saved as 0 and is not rewritten to the default.
+- If the console is already jailbroken, the UI shows that state instead of running the chain again.
+- First Store open after install shows a clear offline-cache fill percent; later opens use the stable AppCache and start instantly from memory.
+- Store Restore puts the PlayStation Store tile back and also removes leftover WK Autoloader app folders and cache data (no backups kept).
 
 ## What's new in 1.2.0
 

@@ -475,3 +475,12 @@ body.done #loader #progressBar{width:100%!important;background:linear-gradient(9
   #loader .postjb-info{width:min(640px,96vw);padding:.65rem 1rem}
   #loader .hi-chip{font-size:.92rem;padding:.35rem .75rem}
 }
+
+#cacheFill{position:fixed;inset:0;z-index:9999;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:rgba(13,14,20,.88)}
+#cacheFill[hidden]{display:none!important}
+#cacheFill .cf-card{width:min(22rem,86vw);padding:1.25rem 1.35rem;border-radius:1rem;background:#161821;border:1px solid rgba(255,154,31,.35);text-align:center;color:#f4ece0;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+#cacheFill .cf-title{margin:0 0 .35rem;font-size:1.05rem;font-weight:600}
+#cacheFill .cf-pct{margin:.2rem 0 .75rem;font-size:2rem;font-weight:700;color:#ffb02e;letter-spacing:.02em}
+#cacheFill .cf-track{height:.55rem;border-radius:999px;background:#2a2d3a;overflow:hidden}
+#cacheFill .cf-bar{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ff7a12,#ffc25a);-webkit-transition:width .15s linear;transition:width .15s linear}
+#cacheFill .cf-sub{margin:.75rem 0 0;font-size:.85rem;color:#94a3b8}

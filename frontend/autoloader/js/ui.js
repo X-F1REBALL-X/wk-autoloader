@@ -377,7 +377,7 @@ W.ui.bindHome = function () {
   function delaySec() {
     var n = parseFloat(delayCur);
     if (isNaN(n)) n = 3;
-    return Math.round(Math.min(3, Math.max(1, n)));
+    return Math.round(Math.min(3, Math.max(0, n)));
   }
   function retryN() {
     var n = retry ? parseInt(retry.value, 10) : 1;
@@ -389,7 +389,7 @@ W.ui.bindHome = function () {
     if (delay) {
       var db = delay.querySelectorAll('.opt[data-delay]'), k;
       for (k = 0; k < db.length; k++) {
-        if (parseInt(db[k].getAttribute('data-delay'), 10) === delaySec()) db[k].classList.add('on');
+        if (Number(db[k].getAttribute('data-delay')) === delaySec()) db[k].classList.add('on');
         else db[k].classList.remove('on');
       }
     }
@@ -408,7 +408,7 @@ W.ui.bindHome = function () {
     try { W.ui.renderHomeInfo(); } catch (eh) {}
   }
   paintAuto();
-  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delayCur = Math.round(Math.min(3, Math.max(1, dv))); }
+  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delayCur = Math.round(Math.min(3, Math.max(0, dv))); }
   if (retry) { var rv = parseInt(W.lsGet(W.LS_RETRY_KEY, '1'), 10); if (isNaN(rv)) rv = 1; retry.value = String(Math.min(3, Math.max(0, rv))); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
@@ -434,13 +434,34 @@ W.ui.bindHome = function () {
     if (W.start) W.start();
   }
 
+  function markAlreadyJailbroken() {
+    W.state.alreadyJailbroken = true;
+    cancelCountdown();
+    if (go) {
+      go.disabled = true;
+      go.classList.remove('is-cancel');
+      go.textContent = W.t('alreadyJailbroken');
+    }
+    if (openOnly) openOnly.hidden = false;
+    try { W.uiLog(W.t('alreadyJailbroken'), 'success'); } catch (eAj) {}
+  }
+
   function startCountdown() {
+    if (W.state.alreadyJailbroken) { markAlreadyJailbroken(); return; }
     if (W.state.chainStarted || autoTimer || !go) return;
     var fw = W.detectFirmware();
     if (fw && fw.num >= 6.0 && fw.num < 7.0) return;
     remaining = delaySec();
     W.state.runStage = 'countdown';
-    if (remaining <= 0) { beginJailbreak(); return; }
+        if (remaining <= 0) {
+      /* Delay 0: start now. First-run fill only. */
+      cancelCountdown();
+      if (go) { go.disabled = true; go.classList.remove("is-cancel"); go.textContent = W.t("starting"); }
+      W.state.safeRetryLeft = retryN();
+      W.state.launcherChoice = W.getLauncherChoice ? W.getLauncherChoice() : W.CHOICE_ELF_LAUNCHER;
+      if (W.start) W.start();
+      return;
+    }
     go.disabled = false;
     go.classList.add('is-cancel');
     go.textContent = W.t('cancel') + ' · ' + remaining;
@@ -485,7 +506,8 @@ W.ui.bindHome = function () {
       var b = ev.target;
       while (b && b !== delay && !(b.getAttribute && b.getAttribute('data-delay'))) b = b.parentNode;
       if (!b || b === delay) return;
-      delayCur = parseInt(b.getAttribute('data-delay'), 10);
+      delayCur = Number(b.getAttribute('data-delay'));
+      if (isNaN(delayCur)) delayCur = 3;
       onDelayMove();
     });
   }
@@ -529,15 +551,28 @@ W.ui.bindHome = function () {
   W.ui.syncChainUi();
   W.ui.renderHistory();
 
-  /* Quick non-blocking probe: if Elf already up, show Open button. */
-  if (W.launcher && W.launcher.probeQuick) {
-    W.launcher.probeQuick(function (up) {
-      if (openOnly) openOnly.hidden = !up;
-      if (up) W.ui.refreshCfiFromLauncher();
-    });
+  /* Quick non-blocking probe: if Elf already up, show Open button.
+     If elfldr (:9021) or Elf Launcher (:1000) answers, console is already
+     jailbroken — do not auto-run the exploit. */
+  function afterProbe(elfUp, ldrUp) {
+    if (openOnly) openOnly.hidden = !elfUp;
+    if (elfUp) try { W.ui.refreshCfiFromLauncher(); } catch (eC) {}
+    if (elfUp || ldrUp) { markAlreadyJailbroken(); return; }
+    if (auto && auto.checked) startCountdown();
   }
-
-  if (auto && auto.checked) startCountdown();
+  if (W.launcher && (W.launcher.probeQuick || W.launcher.probeElfldr)) {
+    var got = 0, elfUp = false, ldrUp = false;
+    function one() {
+      got += 1;
+      if (got >= 2) afterProbe(elfUp, ldrUp);
+    }
+    if (W.launcher.probeQuick) W.launcher.probeQuick(function (up) { elfUp = !!up; one(); });
+    else one();
+    if (W.launcher.probeElfldr) W.launcher.probeElfldr(function (up) { ldrUp = !!up; one(); });
+    else one();
+  } else if (auto && auto.checked) {
+    startCountdown();
+  }
 
   W.ui._cancelCountdown = cancelCountdown;
   W.ui._startCountdown = startCountdown;

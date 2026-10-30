@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" manifest="/wkal-cache.appcache">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,6 +10,15 @@
   <title>WK Autoloader</title>
 </head>
 <body>
+  <div id="cacheFill" hidden>
+  <div class="cf-card">
+    <p class="cf-title">Preparing cache</p>
+    <p class="cf-pct" id="cacheFillPct">0%</p>
+    <div class="cf-track"><div class="cf-bar" id="cacheFillBar"></div></div>
+    <p class="cf-sub" id="cacheFillSub">First open only — keep this page open</p>
+  </div>
+</div>
+
   <div id="toast" role="status" aria-live="polite"><s>!</s><span><b id="toastTitle"></b><small id="toastBody"></small></span><button type="button" id="toastx" aria-label="Dismiss">×</button></div>
   <div id="selfupd" role="status"><p id="selfupdtxt"></p><div class="acts"><button type="button" id="selfupddl" data-i18n="update">Update</button><button type="button" id="selfupdx" data-i18n="selfUpdateLater">Later</button></div></div>
 
@@ -23,7 +32,7 @@
       <div class="spacer"></div>
     </header>
 
-    <div class="ver-pill" id="storeVer">v1.2.0</div>
+    <div class="ver-pill" id="storeVer">v1.2.1</div>
     <div id="splash" aria-hidden="false">
       <main class="main">
         <section class="hero card home-panel" id="homeCard">
@@ -118,6 +127,7 @@
           </div>
           <p class="hint" data-i18n="startDelay">Delay</p>
           <div class="chips" id="startDelay" role="group" aria-label="Auto-start delay">
+            <button type="button" class="opt" data-delay="0"><span class="t">0</span></button>
             <button type="button" class="opt" data-delay="1"><span class="t">1s</span></button>
             <button type="button" class="opt" data-delay="2"><span class="t">2s</span></button>
             <button type="button" class="opt on" data-delay="3"><span class="t">3s</span></button>

@@ -215,17 +215,20 @@ W.ui.bindHome = function () {
   function delaySec() {
     var n = delay ? parseFloat(delay.value) : 3;
     if (isNaN(n)) n = 3;
-    n = Math.round(Math.min(5, Math.max(0.5, n)) * 2) / 2;
+    n = Math.round(Math.min(5, Math.max(0, n)) * 2) / 2;
     return n;
   }
   function paintSliders() {
-    if (delayVal) delayVal.textContent = delaySec() + 's';
+    if (delayVal) {
+      var ds = delaySec();
+      delayVal.textContent = ((ds % 1 === 0) ? String(ds | 0) : String(ds)) + 's';
+    }
   }
 
   /* Auto-start OFF by default (first visit / new key). */
   var savedAuto = W.lsGet(W.LS_AUTO_KEY, '0');
   if (auto) auto.checked = savedAuto === '1';
-  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delay.value = String(Math.round(Math.min(5, Math.max(0.5, dv)) * 2) / 2); }
+  if (delay) { var dv = parseFloat(W.lsGet(W.LS_DELAY_KEY, '3')); if (isNaN(dv)) dv = 3; delay.value = String(Math.round(Math.min(5, Math.max(0, dv)) * 2) / 2); }
   if (sound) sound.checked = W.ui.soundOn();
   paintSliders();
 

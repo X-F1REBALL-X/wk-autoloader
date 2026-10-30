@@ -291,6 +291,48 @@ window.addEventListener('load', function () {
   setTimeout(function () {
     if (W.elauto && W.elauto.prefetch && !W.state.chainStarted) W.elauto.prefetch();
   }, 900);
+
+  /* First-open AppCache fill: show percent while downloading. */
+  (function bindCacheFill() {
+    var box = document.getElementById('cacheFill');
+    var pctEl = document.getElementById('cacheFillPct');
+    var barEl = document.getElementById('cacheFillBar');
+    var subEl = document.getElementById('cacheFillSub');
+    if (!box || !pctEl || !barEl) return;
+    var ac = null;
+    try { ac = (typeof applicationCache !== 'undefined') ? applicationCache : null; } catch (e0) { return; }
+    if (!ac) return;
+    var best = 0;
+    function paint(p, sub) {
+      if (p < best) p = best; else best = p;
+      p = Math.max(0, Math.min(100, p | 0));
+      pctEl.textContent = p + '%';
+      barEl.style.width = p + '%';
+      if (sub && subEl) subEl.textContent = sub;
+      box.hidden = false;
+    }
+    function hide() { box.hidden = true; }
+    function onProgress(e) {
+      var p = 0;
+      try {
+        if (e && e.total > 0) p = Math.floor((e.loaded * 100) / e.total);
+        else if (e && e.loaded > 0) p = Math.min(99, Math.floor(e.loaded));
+      } catch (e1) {}
+      paint(p, 'Caching files…');
+    }
+    try {
+      ac.addEventListener('checking', function () { paint(Math.max(best, 1), 'Checking cache…'); }, false);
+      ac.addEventListener('downloading', function () { paint(Math.max(best, 2), 'Downloading…'); }, false);
+      ac.addEventListener('progress', onProgress, false);
+      ac.addEventListener('cached', function () { paint(100, 'Ready'); setTimeout(hide, 350); }, false);
+      ac.addEventListener('noupdate', hide, false);
+      ac.addEventListener('updateready', function () { paint(100, 'Ready'); setTimeout(hide, 350); }, false);
+      ac.addEventListener('error', hide, false);
+      ac.addEventListener('obsolete', hide, false);
+      if (ac.status === 2 || ac.status === 3) paint(Math.max(best, 1), 'Caching…');
+    } catch (e2) {}
+  })();
+
   try {
     var ac = (typeof applicationCache !== 'undefined') ? applicationCache : null;
     var st = ac ? ac.status : -1;

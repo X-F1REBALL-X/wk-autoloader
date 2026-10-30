@@ -181,17 +181,22 @@ int main(void) {
     }
 
 #ifdef IGNIKEY_STORE
-    /* Clear Store AppCache only when the manifest version changed for the
-     * foreground user. Never wipe other users; AppCache is per profile. */
+    /* Never wipe AppCache on install. If this STORE_VERSION was already
+     * filled for the foreground user, skip the progress page and open /app
+     * so the tile/UI stay warm (true delay-0 on later opens). */
+    int ac_cache_warm = 0;
     {
         int ac_uid = -1;
         char ac_user[16];
         if (sceUserServiceGetForegroundUser(&ac_uid) == 0 && ac_uid > 0) {
             snprintf(ac_user, sizeof(ac_user), "%08x", (unsigned)ac_uid);
-            /* Never wipe on install. A changed manifest makes WebKit update
-             * the cached group in place, so a filled cache stays usable. */
             if (appcache_manifest_needs_refresh(ac_user, STORE_VERSION, wkali_log))
                 wkali_log("[WKALI] AppCache: manifest changed, WebKit will update in place (no wipe)\n");
+            else {
+                ac_cache_warm = 1;
+                wkali_log("[WKALI] AppCache: warm for %s - skip installer progress\n",
+                          STORE_VERSION);
+            }
         } else {
             wkali_log("[WKALI] AppCache: no foreground user, skip cache clear\n");
         }
@@ -232,14 +237,27 @@ int main(void) {
      * Same for Store (IGNIKEY_STORE) and homescreen builds. Never autoload payloads. */
     wkali_install_companions();
 
-    /* Always open the versioned browser URL and keep the server loop, even when
-     * the WK Autoloader page is already on disk - force refresh / reinstall. */
-
-    /* Launch the browser at a versioned URL so the old AppCache master entry
-     * for "/" is never served from the previous install. */
+    /* Open installer progress only when AppCache still needs a fill for this
+     * STORE_VERSION. If already warm, open /app so cached UI is used. */
     char browser_url[256];
-    snprintf(browser_url, sizeof(browser_url),
-             "http://127.0.0.1:%d/index.html?v=%s&nocache=1%s", WKALI_PORT, WKAL_FULL_VERSION, uid_param);
+#ifdef IGNIKEY_STORE
+    if (ac_cache_warm) {
+        if (uid_param[0])
+            snprintf(browser_url, sizeof(browser_url),
+                     "http://127.0.0.1:%d/app/index.html?%s",
+                     WKALI_PORT, uid_param + 1);
+        else
+            snprintf(browser_url, sizeof(browser_url),
+                     "http://127.0.0.1:%d/app/index.html", WKALI_PORT);
+        wkali_log("[WKALI] Opening warm AppCache UI: %s\n", browser_url);
+    } else
+#endif
+    {
+        snprintf(browser_url, sizeof(browser_url),
+                 "http://127.0.0.1:%d/index.html?v=%s&nocache=1%s",
+                 WKALI_PORT, WKAL_FULL_VERSION, uid_param);
+        wkali_log("[WKALI] Opening installer (cache fill): %s\n", browser_url);
+    }
     ps5_launch_browser(browser_url);
 
     /* Main loop - /install installs the homescreen app but keeps :1022 up so
